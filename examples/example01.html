@@ -1,0 +1,205 @@
+<html>
+<head>
+    <style>
+        html, body {
+            background: #eee;
+        }
+        #canvas {
+            background: white;
+            display: block;
+            width: 1000px;
+            height: 900px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="canvas" width="2000" height="1800"></canvas>
+
+<script src="../bower_components/isomer/dist/isomer.js"></script>
+<script src="./example01.js"></script>
+<script>
+/* Some convenient renames */
+var Point = Isomer.Point;
+var Path = Isomer.Path;
+var Shape = Isomer.Shape;
+var Color = Isomer.Color;
+var Cylinder = Shape.Cylinder;
+var Prism = Shape.Prism;
+var Pyramid = Shape.Pyramid;
+
+
+// size of a cube of land, in "Isomer units"
+var blockSize = 1;
+
+// make a space to draw stuff
+var iso = new Isomer(document.getElementById('canvas'));
+
+// iso.setLightPosition(2, -1, 3); // the default
+iso.setLightPosition(0, -2, 4);
+
+// get a world to draw
+var world = fetchWorld();
+
+// draw it!
+renderWorld(iso, world);
+
+setTimeout(function(){
+    world.addTrees();
+    renderWorld(iso, world);
+}, 1000);
+
+// setInterval(function() {
+//     var hX = Math.floor(Math.random() * (world.grid().length));
+//     var hY = Math.floor(Math.random() * (world.grid()[0].length));
+//     world.highlight(hX, hY);
+//     renderWorld(iso, world);
+// }, 5000);
+
+// ------------------------------------------------------------------
+function renderWorld(iso, world) {
+    // loop through the world grid, back to front,
+    // drawing each grid square.
+    grid = world.grid();
+    // the back of the grid is maxx, maxy
+    // the next row foward has x,y coords that sum to (maxx + maxy) - 1
+    // the next row foward has x,y coords that sum to (maxx + maxy) - 2
+    // that's how we're looping from the back to the front.
+    var maxX = grid.length - 1;
+    var maxY = grid[0].length - 1;
+    var coordSum = maxX + maxY;
+    var gX, gY;
+
+    var selSq = world.highlight();
+
+    // clear the canvas
+    iso.canvas.clear();
+
+    var drop = false;
+
+    while (coordSum >= 0) {
+        for (gX = 0; gX <= maxX; gX++) {
+            for (gY = 0; gY <= maxY; gY++) {
+                if (gX + gY == coordSum) {
+                    drop = (selSq
+                        && gX <= selSq.x
+                        && gY <= selSq.y
+                        && !grid[gX][gY].highlighted);
+                    drop = (selSq && (gX + gY < selSq.x + selSq.y));
+                    renderSquare(iso, grid[gX][gY], gX, gY, drop);
+                }
+            }
+        }
+        coordSum -= 1;
+    }
+}
+// ------------------------------------------------------------------
+function renderSquare(iso, square, x, y, drop) {
+
+    var dropAmount = 0;
+    if (drop) {
+        dropAmount = 5 * blockSize;
+    }
+
+    var isoX = x * blockSize;
+    var isoY = y * blockSize;
+
+    // do the ground column ------
+
+    // soil
+    var soilZ = ( 0 - world.maxSoilDepth() )* blockSize;
+    var soilH = ( world.maxSoilDepth() + square.altitude - square.waterDepth )* blockSize;
+    var soilC = getBlockColor('soil', x, y, square);
+    stackOn(iso, isoX, isoY, soilZ  - dropAmount, soilH, soilC);
+
+    // water
+    var waterH = ( square.waterDepth )* blockSize;
+    var waterZ = soilZ + soilH;
+    var waterC = getBlockColor('water', x, y, square);
+    stackOn(iso, isoX, isoY, waterZ - dropAmount, waterH, waterC);
+
+    // leaf litter
+    var litterH = ( square.litterHeight )* blockSize;
+    var litterZ = waterZ + waterH;
+    var litterC = getBlockColor('litter', x, y, square);
+    stackOn(iso, isoX, isoY, litterZ - dropAmount, litterH, litterC);
+
+    // trees ------
+    if (square.trees) {
+        for (tIndex in square.trees) {
+            var tree = square.trees[tIndex];
+            console.log(tree);
+        }
+        renderTree(iso, isoX, isoY, litterZ + litterH - dropAmount, tree);
+    }
+
+    if (square.highlighted) {
+        var glowH = 100 * blockSize;
+        var glowZ = litterZ + litterH;
+        highlight(iso, isoX, isoY, glowZ - dropAmount, glowH, getBlockColor('highlight'));
+    }
+}
+// ------------------------------------------------------------------
+function renderTree(iso, x, y, z, tree) {
+    var treeH = ( tree.height / 3 )* blockSize; // reduce height by 3
+    var treeR = ( tree.diameter / 2 )* blockSize; // reduce diameter
+    var treeC = getBlockColor('trunk');
+    var treeCenter = new Point(x + blockSize/2 - treeR/2, y + blockSize/2 - treeR/2, z);
+
+    // iso.add(new Cylinder(treeCenter, treeR, 100, treeH), treeC);
+    iso.add(new Pyramid(treeCenter, treeR, treeR, treeH), treeC);
+}
+// ------------------------------------------------------------------
+function highlight(iso, x, y, z, h, color) {
+    if (h > 0) {
+        iso.add(
+            new Cylinder(
+                new Point(x + blockSize/2, y + blockSize/2, z),
+                blockSize * 0.5, 50, h
+            ),
+        color);
+    }
+}
+// ------------------------------------------------------------------
+function stackOn(iso, x, y, z, h, color) {
+    if (h > 0) {
+        // var bSize = blockSize * 0.9; // maybe it looks cool with little gaps
+        // var bSize = blockSize * 0.95; // maybe it looks cool with little gaps
+        var bSize = blockSize * 0.98; // maybe it looks cool with little gaps
+        // var bSize = blockSize;
+        iso.add(new Prism(new Point(x, y, z), bSize, bSize, h), color);
+    }
+}
+// ------------------------------------------------------------------
+function getBlockColor(type, sqX, sqY, sq) {
+
+    var scheme = 'bright';
+    // var scheme = 'real';
+    // if (defaultScheme) scheme = defaultScheme;
+
+    try {
+        return ({
+            'bright': {
+                'soil': new Color(110, 50, 35),
+                'litter': new Color(70, 120, 30),
+                'water': new Color(50, 200, 255, 0.9),
+                'trunk': new Color(90, 50, 20, 0.66),
+                'highlight': new Color(255, 255, 100, 0.1)
+            },
+            'real': {
+                'soil': new Color(50, 40, 30),
+                'litter': new Color(50, 60, 40),
+                'water': new Color(50, 150, 255, 0.9),
+                'trunk': new Color(50, 40, 30, 0.66),
+                'highlight': new Color(255, 255, 100, 0.1)
+            }
+        })[scheme][type];
+    } catch(ex) {
+        return new Color(150,100,150);
+    }
+}
+// ------------------------------------------------------------------
+
+</script>
+</body></html>

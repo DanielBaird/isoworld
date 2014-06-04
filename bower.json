@@ -1,0 +1,11 @@
+{
+  "name": "isoworld",
+  "description": "Isometric world builder based on Isomer",
+  "homepage": "http://danielbaird.com",
+  "author": "Daniel Baird <daniel@danielbaird.com>",
+  "version": "0.0.1",
+  "dependencies": {
+    "isomer": "~0.2.4"
+  },
+  "private": true
+}

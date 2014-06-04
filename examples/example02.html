@@ -1,0 +1,30 @@
+<html>
+<head>
+    <style>
+        html, body {
+            background: #eee;
+        }
+        #world {
+            width: 1000px;
+            height: 800px;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+
+<div id="world"></div>
+
+<script src="../dist/isoworld.js"></script>
+<script>
+    var f = new World.Forest('world');
+
+    f.ground(0, 0, 3, [
+        new World.Color(100, 200, 255), 4,
+        new World.Color(200, 100, 50), 2,
+        new World.Color(20, 200, 50)
+    ]);
+</script>
+
+</script>
+</body></html>
