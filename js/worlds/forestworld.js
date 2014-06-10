@@ -10,7 +10,7 @@ function ForestWorld() {
     BaseWorld.apply(this, arguments);
 }
 // -----------------------------------------------------------------
-// boilerplate to do inheritance
+// inheritance
 ForestWorld.prototype = Object.create(BaseWorld.prototype);
 ForestWorld.prototype.constructor = ForestWorld;
 // -----------------------------------------------------------------

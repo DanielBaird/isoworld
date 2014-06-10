@@ -5,8 +5,9 @@
             background: #eee;
         }
         #world {
-            width: 1000px;
-            height: 800px;
+            width: 95%;
+            margin: 1em auto;
+            height: 500px;
             background: white;
         }
     </style>
@@ -19,11 +20,20 @@
 <script>
     var f = new World.Forest('world');
 
-    f.ground(0, 0, 3, [
-        new World.Color(100, 200, 255), 4,
-        new World.Color(200, 100, 50), 2,
-        new World.Color(20, 200, 50)
-    ]);
+    var worldSize = 20;
+
+    for (var x = 0; x < worldSize; x++) {
+        for (var y = 0; y < worldSize; y++) {
+            var z = Math.random() * 0.5;
+            f.ground(x, y, z, [
+                new World.Color(100, 200, 255, 0.75), Math.max(0, Math.random() - 0.5),
+                new World.Color(50, 100, 50), Math.random(),
+                new World.Color(200, 150, 50)
+            ]);
+        }
+    }
+
+    f.render();
 </script>
 
 </script>

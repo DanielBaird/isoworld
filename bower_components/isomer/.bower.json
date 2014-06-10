@@ -1,6 +1,5 @@
 {
   "name": "isomer",
-  "version": "0.2.4",
   "main": "dist/isomer.js",
   "scripts": [
     "dist/isomer.js"
@@ -17,13 +16,13 @@
     "3D"
   ],
   "license": "MIT",
-  "_release": "0.2.4",
+  "_release": "b13f9efa43",
   "_resolution": {
-    "type": "version",
-    "tag": "v0.2.4",
-    "commit": "a86562576bdfe24a31fde6ab749307f69b097f42"
+    "type": "branch",
+    "branch": "master",
+    "commit": "b13f9efa431202757c9968c8a72e2d176af7920b"
   },
-  "_source": "git://github.com/jdan/isomer.git",
-  "_target": "~0.2.4",
-  "_originalSource": "isomer"
+  "_source": "git://github.com/DanielBaird/isomer.git",
+  "_target": "master",
+  "_originalSource": "DanielBaird/isomer"
 }

@@ -5,7 +5,7 @@
   "author": "Daniel Baird <daniel@danielbaird.com>",
   "version": "0.0.1",
   "dependencies": {
-    "isomer": "~0.2.4"
+    "isomer": "DanielBaird/isomer#master"
   },
   "private": true
 }

@@ -3,7 +3,7 @@
  *
  * Copyright 2014 Daniel Baird
  *
- * Date: 2014-06-04
+ * Date: 2014-06-09
  */
 !function(e){if("object"==typeof exports)module.exports=e();else if("function"==typeof define&&define.amd)define(e);else{var o;"undefined"!=typeof window?o=window:"undefined"!=typeof global?o=global:"undefined"!=typeof self&&(o=self),o.isoworld=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 /**
@@ -36,6 +36,8 @@ Canvas.prototype.path = function (points, color) {
 
   /* Set the strokeStyle and fillStyle */
   this.ctx.save()
+
+  this.ctx.globalAlpha = color.a;
   this.ctx.fillStyle = this.ctx.strokeStyle = color.toHex();
   this.ctx.stroke();
   this.ctx.fill();
@@ -50,10 +52,11 @@ module.exports = Canvas;
  *
  * Also holds HSL values
  */
-function Color(r, g, b) {
+function Color(r, g, b, a) {
   this.r = parseInt(r || 0);
   this.g = parseInt(g || 0);
   this.b = parseInt(b || 0);
+  this.a = parseFloat((Math.round(a * 100) / 100 || 1));
 
   this.loadHSL();
 };
@@ -80,7 +83,8 @@ Color.prototype.lighten = function (percentage, lightColor) {
   var newColor = new Color(
     (lightColor.r / 255) * this.r,
     (lightColor.g / 255) * this.g,
-    (lightColor.b / 255) * this.b
+    (lightColor.b / 255) * this.b,
+    this.a
   );
 
   newColor.l = Math.min(newColor.l + percentage, 1);
@@ -186,9 +190,11 @@ function Isomer(canvasId, options) {
   options = options || {};
 
   this.canvas = new Canvas(canvasId);
-  this.angle = Math.PI / 6;
+  this.angle = options.angle || (Math.PI / 6);
 
   this.scale = options.scale || 70;
+
+  this._calculateTransformation();
 
   this.originX = options.originX || this.canvas.width / 2;
   this.originY = options.originY || this.canvas.height * 0.9;
@@ -223,11 +229,11 @@ Isomer.prototype._translatePoint = function (point) {
    * Y rides perpendicular to this angle (in isometric view: PI - angle)
    * Z affects the y coordinate of the drawn point
    */
-  var xMap = new Point(point.x * this.scale * Math.cos(this.angle),
-                       point.x * this.scale * Math.sin(this.angle));
+  var xMap = new Point(point.x * this.transformation[0][0],
+                       point.x * this.transformation[0][1]);
 
-  var yMap = new Point(point.y * this.scale * Math.cos(Math.PI - this.angle),
-                       point.y * this.scale * Math.sin(Math.PI - this.angle));
+  var yMap = new Point(point.y * this.transformation[1][0],
+                       point.y * this.transformation[1][1]);
 
   var x = this.originX + xMap.x + yMap.x;
   var y = this.originY - xMap.y - yMap.y - (point.z * this.scale);
@@ -279,6 +285,23 @@ Isomer.prototype._addPath = function (path, baseColor) {
 
   this.canvas.path(path.points.map(this._translatePoint.bind(this)), color);
 };
+
+/**
+ * Precalculates transformation values based on the current angle and scale
+ * which in theory reduces costly cos and sin calls
+ */
+Isomer.prototype._calculateTransformation = function () {
+  this.transformation = [
+    [
+      this.scale * Math.cos(this.angle),
+      this.scale * Math.sin(this.angle)
+    ],
+    [
+      this.scale * Math.cos(Math.PI - this.angle),
+      this.scale * Math.sin(Math.PI - this.angle)
+    ]
+  ];
+}
 
 /* Namespace our primitives */
 Isomer.Canvas = Canvas;
@@ -783,6 +806,10 @@ module.exports = _dereq_('./worlds/allworlds.js');
 
 },{"./worlds/allworlds.js":13}],10:[function(_dereq_,module,exports){
 
+var Isomer = _dereq_('../../bower_components/isomer/index.js');
+var Point = Isomer.Point;
+var Prism = Isomer.Shape.Prism;
+
 // -----------------------------------------------------------------
 function Block(centerX, centerY, bottomZ, w, h, color) {
     this.cX = centerX;
@@ -799,12 +826,21 @@ function Block(centerX, centerY, bottomZ, w, h, color) {
     this.color = color;
 }
 // -----------------------------------------------------------------
-Block.prototype.render = function(iso) {
-    // .. wtf to do here?
+Block.prototype.render = function(iso, opts) {
+    var origin = new Point(
+        this.x * opts.groundScale,
+        this.y * opts.groundScale,
+        this.z * opts.groundScale
+    );
+    var w = this.w * opts.groundScale * (1 - opts.isoGap);
+    iso.add(
+        new Prism(origin, w, w, this.h * opts.groundScale),
+        this.color
+    );
 }
 // -----------------------------------------------------------------
 module.exports = Block;
-},{}],11:[function(_dereq_,module,exports){
+},{"../../bower_components/isomer/index.js":1}],11:[function(_dereq_,module,exports){
 
 
 var Block = _dereq_('./block.js');
@@ -813,7 +849,12 @@ function UnitColumn(centerX, centerY, bottomZ, h, color) {
     Block.call(this, centerX, centerY, bottomZ, 1, h, color);
 }
 // -----------------------------------------------------------------
+// inheritance
+UnitColumn.prototype = Object.create(Block.prototype);
+UnitColumn.prototype.constructor = UnitColumn;
+// -----------------------------------------------------------------
 module.exports = UnitColumn;
+
 },{"./block.js":10}],12:[function(_dereq_,module,exports){
 
 // shim for Object.create, from MDN
@@ -855,7 +896,9 @@ module.exports = World;
 
 _dereq_('../util/shims.js');
 
-var defaultOptions = _dereq_('./worlddefaults.js');
+var defaults = _dereq_('./worlddefaults.js');
+var defaultOptions = defaults.options;
+var colorSchemes = defaults.colorSchemes;
 var Isomer = _dereq_('../../bower_components/isomer/index.js');
 var UnitColumn = _dereq_('../objects/unitcolumn.js');
 
@@ -882,16 +925,22 @@ BaseWorld.prototype.makeLayers = function(domElement) {
 
     var w = this._dom.clientWidth;
     var h = this._dom.clientHeight;
+    var isomerOptions = {
+        angle: this._opts.isoAngle,
+        scale: this._opts.isoSize,
+        originY: h - (1.5 * this._opts.isoSize)
+    }
 
     this._dom.innerHTML = '' +
-        '<canvas id="isoworld-bg" width="' + w + '" height="' + h + '"></canvas>' +
-        '<canvas id="isoworld-fg" width="' + w + '" height="' + h + '"></canvas>' +
-        '<canvas id="isoworld-ui" width="' + w + '" height="' + h + '"></canvas>';
+        '<style>.isoworld { position: absolute; top: 0, bottom: 0, left: 0, right: 0 }</style>' +
+        '<canvas id="isoworld-bg" class="isoworld" width="' + w + '" height="' + h + '"></canvas>' +
+        '<canvas id="isoworld-fg" class="isoworld" width="' + w + '" height="' + h + '"></canvas>' +
+        '<canvas id="isoworld-ui" class="isoworld" width="' + w + '" height="' + h + '"></canvas>';
 
     this._layers = {
-        bg: new Isomer(document.getElementById('isoworld-bg')),
-        fg: new Isomer(document.getElementById('isoworld-fg')),
-        ui: new Isomer(document.getElementById('isoworld-ui'))
+        bg: new Isomer(document.getElementById('isoworld-bg'), isomerOptions),
+        fg: new Isomer(document.getElementById('isoworld-fg'), isomerOptions),
+        ui: new Isomer(document.getElementById('isoworld-ui'), isomerOptions)
     }
 }
 // -----------------------------------------------------------------
@@ -918,28 +967,35 @@ BaseWorld.prototype.autoRender = function(yesno) {
 // Alternatively just provide a single Color for a simple one-color column.
 BaseWorld.prototype.ground = function(x, y, altitude, stack) {
 
-    var toBedrock = this._opts.bedrockDepth + altitude;
-    var stackPos, layerThickness, layerColor;
+    var height = altitude;
+    var stackPos, layerThickness, layerColor, column;
 
     var groundStack = [];
 
     if (stack instanceof Array) {
-        // if the uesr supplied an actual stack of thickness & color,
+        // if the caller supplied an actual stack of thickness & color,
         // go through the stack..
         for (stackPos = 0; stackPos < stack.length; stackPos = stackPos + 2) {
             layerColor = stack[stackPos];
             if (stackPos < stack.length - 1) {
-                layerThickness = Math.min(stack[stackPos + 1], toBedrock);
+                layerThickness = stack[stackPos + 1];
             } else {
-                layerThickness = toBedrock;
+                layerThickness = height - this._opts.bedrockLevel;
             }
-            toBedrock -= layerThickness; // how far to go to bedrock
-
-            groundStack.unshift(new UnitColumn(x, y, altitude - toBedrock, layerThickness, layerColor));
+            height -= layerThickness;
+            column = new UnitColumn(
+                x, y, height,
+                layerThickness, layerColor
+            );
+            if (layerThickness > 0) {
+                groundStack.unshift(column);
+            }
         }
     } else {
         // otherwise they must've given us a Color
-        groundStack.unshift(new UnitColumn(x, y, 0 - toBedrock, toBedrock + altitude, stack));
+        groundStack.unshift(new UnitColumn(
+            x, y, this._opts.bedrockLevel,
+            altitude - this._opts.bedrockLevel, stack));
     }
 
     this.groundStack(x, y, groundStack);
@@ -984,18 +1040,22 @@ BaseWorld.prototype.groundStack = function(x, y, stack) {
 // -----------------------------------------------------------------
 // render a square
 BaseWorld.prototype.renderSquare = function(x, y) {
-    var iso = this._layers.fg;
     var sq = this._squares[x][y];
     // render ground column
-    var layer;
     for (layer in sq.ground) {
-        iso.add()
+        sq.ground[layer].render(this._layers.fg, this._opts);
     }
 }
 // -----------------------------------------------------------------
 // render
 BaseWorld.prototype.render = function() {
-    this._layers.fg.canvas.clear();
+    //.canvas.clear();
+
+    // temporary ground-level indicator
+    // var levelc = new Isomer.Color(255,0,0, 0.5);
+    // this._layers.fg.add(new Isomer.Shape.Prism(new Isomer.Point(1, -1, -0.01), 1, 1, 0.01), levelc);
+    // this._layers.fg.add(new Isomer.Shape.Prism(new Isomer.Point(-1, 1, -0.01), 1, 1, 0.01), levelc);
+
     var g = this._squares;
 
     var maxX = g.length - 1;
@@ -1007,7 +1067,7 @@ BaseWorld.prototype.render = function() {
         for (gX = 0; gX <= maxX; gX++) {
             for (gY = 0; gY <= maxY; gY++) {
                 if (gX + gY == coordSum && g[gX][gY]) {
-                    renderSquare(gX, gY);
+                    this.renderSquare(gX, gY);
                 }
             }
         }
@@ -1038,7 +1098,7 @@ function ForestWorld() {
     BaseWorld.apply(this, arguments);
 }
 // -----------------------------------------------------------------
-// boilerplate to do inheritance
+// inheritance
 ForestWorld.prototype = Object.create(BaseWorld.prototype);
 ForestWorld.prototype.constructor = ForestWorld;
 // -----------------------------------------------------------------
@@ -1048,19 +1108,50 @@ module.exports = ForestWorld;
 
 },{"../util/shims.js":12,"./baseworld.js":14}],16:[function(_dereq_,module,exports){
 
+var Color = _dereq_('../../bower_components/isomer/index.js').Color;
+
 var defaultOptions = {
     autoRender: true,
 
-    bedrockDepth: 5,
+    bedrockLevel: -10,
 
-    groundScale: 1.5,
+    groundScale: 1,
     heightScale: 1,
-    interBlockGap: 0.05,
+
+    colorScheme: 'bright',
+
+    // isoSize is the pixel length of a 1x1x1 block.  Isomer default
+    // is 70.
+    isoSize: 30,
+    // isoAngle should be between Math.PI/4 and Math.PI/15 or so.
+    // Math.PI/6 is the Isomer default.
+    isoAngle: Math.PI/8,
+    isoGap: 0.1,
 
     dummy: "final thing with no trailing comma"
 }
 
-module.exports = defaultOptions;
-},{}]},{},[9])
+var colorSchemes = {
+    'bright': {
+        'soil': new Color(110, 50, 35),
+        'leaflitter': new Color(70, 120, 30),
+        'water': new Color(50, 200, 255, 0.75),
+        'wood': new Color(90, 50, 20, 0.66),
+        'highlight': new Color(255, 255, 100, 0.1)
+    },
+    'real': {
+        'soil': new Color(50, 40, 30),
+        'leaflitter': new Color(50, 60, 40),
+        'water': new Color(50, 150, 255, 0.75),
+        'wood': new Color(50, 40, 30, 0.66),
+        'highlight': new Color(255, 255, 100, 0.1)
+    }
+}
+
+module.exports = {
+    options: defaultOptions,
+    colorSchemes: colorSchemes
+}
+},{"../../bower_components/isomer/index.js":1}]},{},[9])
 (9)
 });

@@ -1,7 +1,9 @@
 
 require('../util/shims.js');
 
-var defaultOptions = require('./worlddefaults.js');
+var defaults = require('./worlddefaults.js');
+var defaultOptions = defaults.options;
+var colorSchemes = defaults.colorSchemes;
 var Isomer = require('../../bower_components/isomer/index.js');
 var UnitColumn = require('../objects/unitcolumn.js');
 
@@ -28,16 +30,22 @@ BaseWorld.prototype.makeLayers = function(domElement) {
 
     var w = this._dom.clientWidth;
     var h = this._dom.clientHeight;
+    var isomerOptions = {
+        angle: this._opts.isoAngle,
+        scale: this._opts.isoSize,
+        originY: h - (1.5 * this._opts.isoSize)
+    }
 
     this._dom.innerHTML = '' +
-        '<canvas id="isoworld-bg" width="' + w + '" height="' + h + '"></canvas>' +
-        '<canvas id="isoworld-fg" width="' + w + '" height="' + h + '"></canvas>' +
-        '<canvas id="isoworld-ui" width="' + w + '" height="' + h + '"></canvas>';
+        '<style>.isoworld { position: absolute; top: 0, bottom: 0, left: 0, right: 0 }</style>' +
+        '<canvas id="isoworld-bg" class="isoworld" width="' + w + '" height="' + h + '"></canvas>' +
+        '<canvas id="isoworld-fg" class="isoworld" width="' + w + '" height="' + h + '"></canvas>' +
+        '<canvas id="isoworld-ui" class="isoworld" width="' + w + '" height="' + h + '"></canvas>';
 
     this._layers = {
-        bg: new Isomer(document.getElementById('isoworld-bg')),
-        fg: new Isomer(document.getElementById('isoworld-fg')),
-        ui: new Isomer(document.getElementById('isoworld-ui'))
+        bg: new Isomer(document.getElementById('isoworld-bg'), isomerOptions),
+        fg: new Isomer(document.getElementById('isoworld-fg'), isomerOptions),
+        ui: new Isomer(document.getElementById('isoworld-ui'), isomerOptions)
     }
 }
 // -----------------------------------------------------------------
@@ -64,28 +72,35 @@ BaseWorld.prototype.autoRender = function(yesno) {
 // Alternatively just provide a single Color for a simple one-color column.
 BaseWorld.prototype.ground = function(x, y, altitude, stack) {
 
-    var toBedrock = this._opts.bedrockDepth + altitude;
-    var stackPos, layerThickness, layerColor;
+    var height = altitude;
+    var stackPos, layerThickness, layerColor, column;
 
     var groundStack = [];
 
     if (stack instanceof Array) {
-        // if the uesr supplied an actual stack of thickness & color,
+        // if the caller supplied an actual stack of thickness & color,
         // go through the stack..
         for (stackPos = 0; stackPos < stack.length; stackPos = stackPos + 2) {
             layerColor = stack[stackPos];
             if (stackPos < stack.length - 1) {
-                layerThickness = Math.min(stack[stackPos + 1], toBedrock);
+                layerThickness = stack[stackPos + 1];
             } else {
-                layerThickness = toBedrock;
+                layerThickness = height - this._opts.bedrockLevel;
             }
-            toBedrock -= layerThickness; // how far to go to bedrock
-
-            groundStack.unshift(new UnitColumn(x, y, altitude - toBedrock, layerThickness, layerColor));
+            height -= layerThickness;
+            column = new UnitColumn(
+                x, y, height,
+                layerThickness, layerColor
+            );
+            if (layerThickness > 0) {
+                groundStack.unshift(column);
+            }
         }
     } else {
         // otherwise they must've given us a Color
-        groundStack.unshift(new UnitColumn(x, y, 0 - toBedrock, toBedrock + altitude, stack));
+        groundStack.unshift(new UnitColumn(
+            x, y, this._opts.bedrockLevel,
+            altitude - this._opts.bedrockLevel, stack));
     }
 
     this.groundStack(x, y, groundStack);
@@ -130,18 +145,22 @@ BaseWorld.prototype.groundStack = function(x, y, stack) {
 // -----------------------------------------------------------------
 // render a square
 BaseWorld.prototype.renderSquare = function(x, y) {
-    var iso = this._layers.fg;
     var sq = this._squares[x][y];
     // render ground column
-    var layer;
     for (layer in sq.ground) {
-        iso.add()
+        sq.ground[layer].render(this._layers.fg, this._opts);
     }
 }
 // -----------------------------------------------------------------
 // render
 BaseWorld.prototype.render = function() {
-    this._layers.fg.canvas.clear();
+    //.canvas.clear();
+
+    // temporary ground-level indicator
+    // var levelc = new Isomer.Color(255,0,0, 0.5);
+    // this._layers.fg.add(new Isomer.Shape.Prism(new Isomer.Point(1, -1, -0.01), 1, 1, 0.01), levelc);
+    // this._layers.fg.add(new Isomer.Shape.Prism(new Isomer.Point(-1, 1, -0.01), 1, 1, 0.01), levelc);
+
     var g = this._squares;
 
     var maxX = g.length - 1;
@@ -153,7 +172,7 @@ BaseWorld.prototype.render = function() {
         for (gX = 0; gX <= maxX; gX++) {
             for (gY = 0; gY <= maxY; gY++) {
                 if (gX + gY == coordSum && g[gX][gY]) {
-                    renderSquare(gX, gY);
+                    this.renderSquare(gX, gY);
                 }
             }
         }

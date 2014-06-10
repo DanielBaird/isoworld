@@ -1,4 +1,8 @@
 
+var Isomer = require('../../bower_components/isomer/index.js');
+var Point = Isomer.Point;
+var Prism = Isomer.Shape.Prism;
+
 // -----------------------------------------------------------------
 function Block(centerX, centerY, bottomZ, w, h, color) {
     this.cX = centerX;
@@ -15,8 +19,17 @@ function Block(centerX, centerY, bottomZ, w, h, color) {
     this.color = color;
 }
 // -----------------------------------------------------------------
-Block.prototype.render = function(iso) {
-    // .. wtf to do here?
+Block.prototype.render = function(iso, opts) {
+    var origin = new Point(
+        this.x * opts.groundScale,
+        this.y * opts.groundScale,
+        this.z * opts.groundScale
+    );
+    var w = this.w * opts.groundScale * (1 - opts.isoGap);
+    iso.add(
+        new Prism(origin, w, w, this.h * opts.groundScale),
+        this.color
+    );
 }
 // -----------------------------------------------------------------
 module.exports = Block;
