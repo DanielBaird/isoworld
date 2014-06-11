@@ -2,28 +2,31 @@
 var Color = require('../../bower_components/isomer/index.js').Color;
 
 var defaultOptions = {
+
     autoRender: true,
 
-    bedrockLevel: -10,
-
-    groundScale: 1,
-    heightScale: 1,
+    worldSizeX: 10,     // size of world
+    worldSizeY: 10,     // size of world
+    worldOriginX: 0,    // starting X coord, in world units
+    worldOriginY: 0,    // starting Y coord, in world units
+    worldOriginZ: 0,    // starting Z coord, in world units
+    worldScaleZ: 1,     // how many altitude units to a ground co-ord unit?
 
     colorScheme: 'bright',
+    bedrockLevel: -10,
+    blockSize: 1,       // how many 'world' units long is one side of a block?
+    isoGap: 0.05,       // gap to leave between blocks
 
-    // isoSize is the pixel length of a 1x1x1 block.  Isomer default
-    // is 70.
-    isoSize: 30,
-    // isoAngle should be between Math.PI/4 and Math.PI/15 or so.
-    // Math.PI/6 is the Isomer default.
-    isoAngle: Math.PI/8,
-    isoGap: 0.1,
+    // Isomer rendering options.
+    isoScale: 60,       // pixel length of a 1x1x1 block.  Isomer default is 70
+    isoAngle: Math.PI/8,  // Math.PI/4 ~ Math.PI/15.  Isomer default is Math.PI/6
 
-    dummy: "final thing with no trailing comma"
+    dummy: "has no trailing comma"
 }
 
 var colorSchemes = {
     'bright': {
+        'blank': new Color(180,180,180, 0.88),
         'soil': new Color(110, 50, 35),
         'leaflitter': new Color(70, 120, 30),
         'water': new Color(50, 200, 255, 0.75),
@@ -31,6 +34,7 @@ var colorSchemes = {
         'highlight': new Color(255, 255, 100, 0.1)
     },
     'real': {
+        'blank': new Color(125,125,125),
         'soil': new Color(50, 40, 30),
         'leaflitter': new Color(50, 60, 40),
         'water': new Color(50, 150, 255, 0.75),

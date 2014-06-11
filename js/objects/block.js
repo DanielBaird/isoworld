@@ -21,13 +21,13 @@ function Block(centerX, centerY, bottomZ, w, h, color) {
 // -----------------------------------------------------------------
 Block.prototype.render = function(iso, opts) {
     var origin = new Point(
-        this.x * opts.groundScale,
-        this.y * opts.groundScale,
-        this.z * opts.groundScale
+        this.x,
+        this.y,
+        this.z
     );
-    var w = this.w * opts.groundScale * (1 - opts.isoGap);
+    var w = this.w * (1 - opts.isoGap);
     iso.add(
-        new Prism(origin, w, w, this.h * opts.groundScale),
+        new Prism(origin, w, w, this.h),
         this.color
     );
 }
