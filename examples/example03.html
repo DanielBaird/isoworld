@@ -1,0 +1,54 @@
+<html>
+<head>
+    <style>
+        html, body {
+            background: #eee;
+        }
+        #world {
+            width: 97%;
+            margin: 1em auto;
+            height: 700px;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+
+<div id="world"></div>
+
+<script src="../dist/isoworld.js"></script>
+<script>
+
+    var wX = 5;
+    var wY = 8;
+    var blockSize = 5;
+
+    var f = new World.Forest('world', {
+        worldSizeX: wX,
+        worldSizeY: wY,
+        blockSize: blockSize
+    });
+
+    for (var x = 0; x < wX; x++) {
+        for (var y = 0; y < wY; y++) {
+            f.groundLevel(x, y, Math.random());
+        }
+    }
+/*
+    for (var x = 0; x < worldSize; x++) {
+        for (var y = 0; y < worldSize; y++) {
+            var z = Math.random() * 0.5;
+            f.ground(x * 3 + 10, y * 6 + 20, z, [
+                new World.Color(50, 100, 50), Math.random() * 3,
+                new World.Color(80, 50, 30), Math.random() * 3,
+                new World.Color(120, 80, 40), Math.random() * 3,
+                new World.Color(200, 150, 50)
+            ]);
+        }
+    }
+*/
+    f.render();
+</script>
+
+</script>
+</body></html>
