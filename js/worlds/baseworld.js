@@ -188,14 +188,8 @@ BaseWorld.prototype.ground = function(x, y, stack) {
 // -----------------------------------------------------------------
 // make sure a square exists at x,y.  Grow the world as necessary
 BaseWorld.prototype.validatePosition = function(x, y) {
-
     var sq = this._squares;
-
-    if (x < 0 || y < 0 || x >= sq.length || y >= sq[0].length ) {
-        console.error('Invalid block position: (' + x + ', ' + y + ')');
-        return false;
-    }
-    return true;
+    return (!(x < 0 || y < 0 || x >= sq.length || y >= sq[0].length));
 }
 // -----------------------------------------------------------------
 // set ground level for the square at BLOCK coords x,y.
@@ -210,7 +204,8 @@ BaseWorld.prototype.setGroundLevel = function(x, y, z) {
 BaseWorld.prototype.setGroundStack = function(x, y, stack) {
     if (this.validatePosition(x, y)) {
         this._groundStacks.push({ x: x, y: y, stack: stack });
-        this._squares[x][y].ground = stack;
+        this._extrapolateGround();
+        // this._squares[x][y].ground = stack;
     }
 }
 // -----------------------------------------------------------------
@@ -220,7 +215,7 @@ BaseWorld.prototype.renderSquare = function(x, y) {
     var sq = this._squares[x][y];
     if (sq !== undefined) {
         // is there a ground column?
-        if (sq.ground.length > 0) {
+        if (sq.ground && sq.ground.length > 0) {
             // render ground column
             for (layer in sq.ground) {
                 sq.ground[layer].render(this._layers.fg, this._opts);
@@ -264,14 +259,14 @@ BaseWorld.prototype.render = function() {
 
     var g = this._squares;
 
-    var maxX = g.length - 1;
-    var maxY = g[0].length - 1;
-    var coordSum = maxX + maxY;
+    var maxX = g.length;
+    var maxY = g[0].length;
+    var coordSum = maxX + maxY - 2; // -2 coz they're both zero indexed
     var gX, gY;
 
     while (coordSum >= 0) {
-        for (gX = 0; gX <= maxX; gX++) {
-            for (gY = 0; gY <= maxY; gY++) {
+        for (gX = 0; gX < maxX; gX++) {
+            for (gY = 0; gY < maxY; gY++) {
                 if (gX + gY == coordSum && g[gX][gY]) {
                     this.renderSquare(gX, gY);
                 }
@@ -283,9 +278,76 @@ BaseWorld.prototype.render = function() {
 // -----------------------------------------------------------------
 // render, only if we're supoosed to re-render automatically
 BaseWorld.prototype.renderMaybe = function() {
-    if (this._autoRender) {
-        this.render();
+    if (this._autoRender) { this.render(); }
+}
+// -----------------------------------------------------------------
+// extrapolate all the ground columns
+BaseWorld.prototype._neighbours = function(x, y) {
+    var neighbours = [];
+    for (var dx = -1; dx <= 1; dx++) {
+        for (var dy = -1; dy <= 1; dy++) {
+            if (dx == 0 && dy == 0) continue;
+            if (this.validatePosition(x + dx, y + dy)) {
+                neighbours.push({x: x + dx, y: y + dy});
+            }
+        }
     }
+    return neighbours;
+}
+// -----------------------------------------------------------------
+// copy a ground column between squares
+BaseWorld.prototype._copyGround = function(from, to) {
+    var newLayer;
+    to.ground = [];
+    for (var layerIndex = 0; layerIndex < from.ground.length; layerIndex++) {
+        newLayer = from.ground[layerIndex].dupe();
+        newLayer.translate(to.x - from.x, to.y - from.y, to.z - from.z);
+        to.ground.push(newLayer);
+    }
+}
+// -----------------------------------------------------------------
+// extrapolate all the ground columns
+BaseWorld.prototype._extrapolateGround = function() {
+    var x, y, gs;
+    var sqs = this._squares;
+    var maxX = sqs.length;
+    var maxY = sqs[0].length;
+
+    // clear all the ground columns
+    for (x = 0; x < maxX; x++) { for (y = 0; y < maxY; y++) {
+        sqs[x][y].ground = undefined;
+    }}
+
+    // go through the list of known ground columns and set each one
+    for (var gsIndex = 0; gsIndex < this._groundStacks.length; gsIndex++) {
+        gs = this._groundStacks[gsIndex];
+        sqs[gs.x][gs.y].ground = gs.stack;
+    }
+
+    // go through all the squares, copying each square's ground stack
+    // into any un-set neighbours.
+    var changed = 1;
+    var neighbours, n, nsq, sq;
+    while (changed > 0) {
+        changed = 0;
+        for (x = 0; x < maxX; x++) { for (y = 0; y < maxY; y++) {
+            sq = sqs[x][y];
+            if (sq.ground !== undefined) {
+                // okay this square has a ground stack.
+                // set its neighbours..
+                neighbours = this._neighbours(x, y);
+                for (var nIndex = 0; nIndex < neighbours.length; nIndex++) {
+                    nsq = sqs[neighbours[nIndex].x][neighbours[nIndex].y];
+                    if (nsq.ground === undefined) {
+                        changed++;
+                        this._copyGround(sq, nsq);
+                    }
+                }
+            }
+        }}
+    }
+    this.renderMaybe();
+
 }
 // -----------------------------------------------------------------
 // -----------------------------------------------------------------

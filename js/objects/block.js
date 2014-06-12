@@ -13,6 +13,16 @@ function Block(blockX, blockY, bottomZ, w, h, color) {
     this.color = color;
 }
 // -----------------------------------------------------------------
+Block.prototype.dupe = function() {
+    return new Block(this.x, this.y, this.z, this.w, this.h, this.color);
+}
+// -----------------------------------------------------------------
+Block.prototype.translate = function(dx, dy, dz) {
+    this.x += dx;
+    this.y += dy;
+    this.z += dz;
+}
+// -----------------------------------------------------------------
 Block.prototype.render = function(iso, opts) {
     var origin = new Point(
         this.x,
