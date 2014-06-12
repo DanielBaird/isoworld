@@ -7,9 +7,11 @@ var defaultOptions = {
 
     worldSizeX: 10,     // size of world
     worldSizeY: 10,     // size of world
+
     worldOriginX: 0,    // starting X coord, in world units
     worldOriginY: 0,    // starting Y coord, in world units
     worldOriginZ: 0,    // starting Z coord, in world units
+
     worldScaleZ: 1,     // how many altitude units to a ground co-ord unit?
 
     colorScheme: 'bright',
@@ -26,7 +28,7 @@ var defaultOptions = {
 
 var colorSchemes = {
     'bright': {
-        'blank': new Color(180,180,180, 0.88),
+        'blank': new Color(180,180,180),
         'soil': new Color(110, 50, 35),
         'leaflitter': new Color(70, 120, 30),
         'water': new Color(50, 200, 255, 0.75),

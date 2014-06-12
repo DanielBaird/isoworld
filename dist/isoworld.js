@@ -3,7 +3,7 @@
  *
  * Copyright 2014 Daniel Baird
  *
- * Date: 2014-06-11
+ * Date: 2014-06-12
  */
 !function(e){if("object"==typeof exports)module.exports=e();else if("function"==typeof define&&define.amd)define(e);else{var o;"undefined"!=typeof window?o=window:"undefined"!=typeof global?o=global:"undefined"!=typeof self&&(o=self),o.isoworld=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 /**
@@ -811,18 +811,12 @@ var Point = Isomer.Point;
 var Prism = Isomer.Shape.Prism;
 
 // -----------------------------------------------------------------
-function Block(centerX, centerY, bottomZ, w, h, color) {
-    this.cX = centerX;
-    this.cY = centerY;
-    this.bZ = bottomZ;
-
-    var halfW = w / 2;
-    this.x = centerX - halfW;
-    this.y = centerY - halfW;
+function Block(blockX, blockY, bottomZ, w, h, color) {
+    this.x = blockX;
+    this.y = blockY;
     this.z = bottomZ;
     this.w = w;
     this.h = h;
-
     this.color = color;
 }
 // -----------------------------------------------------------------
@@ -909,6 +903,7 @@ function BaseWorld(domElement, options) {
     this.mergeOptions(options);
 
     this._squares = this.initSquares();
+
     this._groundStacks = [];
     this._groundHeight = [];
     this._layers = this.makeLayers(domElement);
@@ -922,9 +917,13 @@ function BaseWorld(domElement, options) {
 // init our squares
 BaseWorld.prototype.initSquares = function() {
     var sqs = [];
-    for (var x = 0; x < this._opts.worldSizeX; x++) {
+    var opts = this._opts;
+    var blocksX = Math.ceil(opts.worldSizeX / opts.blockSize);
+    var blocksY = Math.ceil(opts.worldSizeY / opts.blockSize);
+
+    for (var x = 0; x < blocksX; x++) {
         sqs.push([]);
-        for (var y = 0; y < this._opts.worldSizeY; y++) {
+        for (var y = 0; y < blocksY; y++) {
             sqs[x].push({
                 // here's the default square.
                 x: x,
@@ -940,6 +939,9 @@ BaseWorld.prototype.initSquares = function() {
 // -----------------------------------------------------------------
 // return a color
 BaseWorld.prototype.getColor = function(type) {
+    if (type instanceof Isomer.Color) {
+        return type;
+    }
     var color = this._colors[type];
     if (!color) color = this._colors['blank'];
     return color
@@ -1011,8 +1013,8 @@ BaseWorld.prototype.w2b = function(worldX, worldY, altitude) {
     }
     var opts = this._opts;
     // okay now we have world coords for x,y,z.
-    var bX = Math.round( (wX - opts.worldOriginX) / opts.blockSize );
-    var bY = Math.round( (wY - opts.worldOriginY) / opts.blockSize );
+    var bX = Math.floor( (wX - opts.worldOriginX) / opts.blockSize );
+    var bY = Math.floor( (wY - opts.worldOriginY) / opts.blockSize );
     var bZ = (wZ - opts.worldOriginZ) / opts.blockSize * opts.worldScaleZ;
     return ([bX, bY, bZ]);
 }
@@ -1024,18 +1026,19 @@ BaseWorld.prototype.groundLevel = function(x, y, altitude) {
     var bY = blockCoords[1];
     var bZ = blockCoords[2];
     this.setGroundLevel(bX, bY, bZ);
+    this.renderMaybe();
 }
 // -----------------------------------------------------------------
 // set the underground column for world coords x,y.  The stack argument
 // is an array of alternating Color and thickness values.  The final
 // Color doesn't need a thickness, it will continue to bedrock.
 // Alternatively just provide a single Color for a simple one-color column.
-BaseWorld.prototype.ground = function(x, y, altitude, stack) {
+BaseWorld.prototype.ground = function(x, y, stack) {
 
-    var blockCoords = this.w2b(x, y, altitude);
+    var blockCoords = this.w2b(x, y, 0);
     var bX = blockCoords[0];
     var bY = blockCoords[1];
-    var bZ = blockCoords[2];
+    var bZ = this._squares[bX][bY].z;
 
     var height = bZ;
     var stackPos, layerThickness, layerColor, column;
@@ -1046,7 +1049,7 @@ BaseWorld.prototype.ground = function(x, y, altitude, stack) {
         // if the caller supplied an actual stack of thickness & color,
         // go through the stack..
         for (stackPos = 0; stackPos < stack.length; stackPos = stackPos + 2) {
-            layerColor = stack[stackPos];
+            layerColor = this.getColor(stack[stackPos]);
             if (stackPos < stack.length - 1) {
                 layerThickness = this.w2bVertical( stack[stackPos + 1] );
             } else {
@@ -1065,7 +1068,7 @@ BaseWorld.prototype.ground = function(x, y, altitude, stack) {
         // otherwise they must've given us a Color
         groundStack.unshift(new UnitColumn(
             bX, bY, this._opts.bedrockLevel,
-            bZ - this._opts.bedrockLevel, stack));
+            bZ - this._opts.bedrockLevel, this.getColor(stack)));
     }
 
     this.setGroundStack(bX, bY, groundStack);
@@ -1075,35 +1078,12 @@ BaseWorld.prototype.ground = function(x, y, altitude, stack) {
 // make sure a square exists at x,y.  Grow the world as necessary
 BaseWorld.prototype.validatePosition = function(x, y) {
 
-    if (x < 0 || y < 0) {
+    var sq = this._squares;
+
+    if (x < 0 || y < 0 || x >= sq.length || y >= sq[0].length ) {
         console.error('Invalid block position: (' + x + ', ' + y + ')');
         return false;
     }
-
-    // grow world to this x, y
-    if (this._squares.length < x) {
-        // grow along x
-        this._squares.length = x;
-    }
-    if (this._squares[x] === undefined) {
-        // create the x'th row of y's if necessary
-        this._squares[x] = Array(y);
-    }
-    if (this._squares[x].length < y) {
-        // grow along y if necessary
-        this._squares[x].length = y;
-    }
-    if (this._squares[x][y] === undefined) {
-        this._squares[x][y] = {};
-    }
-
-    // we also need to keep squares[0] length updated, we use
-    // that to track max width.
-    if (this._squares[0].length < y) {
-        // grow along y if necessary
-        this._squares[0].length = y;
-    }
-
     return true;
 }
 // -----------------------------------------------------------------
@@ -1118,12 +1098,14 @@ BaseWorld.prototype.setGroundLevel = function(x, y, z) {
 // setting will set from bedrock up to altitude in specified color
 BaseWorld.prototype.setGroundStack = function(x, y, stack) {
     if (this.validatePosition(x, y)) {
+        this._groundStacks.push({ x: x, y: y, stack: stack });
         this._squares[x][y].ground = stack;
     }
 }
 // -----------------------------------------------------------------
 // render a square
 BaseWorld.prototype.renderSquare = function(x, y) {
+
     var sq = this._squares[x][y];
     if (sq !== undefined) {
         // is there a ground column?
@@ -1143,7 +1125,7 @@ BaseWorld.prototype.renderSquare = function(x, y) {
 BaseWorld.prototype.renderBlankSquare = function(sq) {
     if (! this._blankBlock) {
         this._blankBlock = new Isomer.Shape.Prism(
-            new Isomer.Point(-0.5, -0.5, this._opts.bedrockLevel),
+            new Isomer.Point(0, 0, this._opts.bedrockLevel),
             1 - this._opts.isoGap,
             1 - this._opts.isoGap,
             0 - this._opts.bedrockLevel
@@ -1155,7 +1137,7 @@ BaseWorld.prototype.renderBlankSquare = function(sq) {
     }
     this._layers.fg.add(
         this._blankBlock.scale(
-            new Isomer.Point(-0.5, -0.5, this._opts.bedrockLevel),
+            new Isomer.Point(0, 0, this._opts.bedrockLevel),
             1, 1, zScale
         ).translate(sq.x, sq.y, sq.z),
         this.getColor('blank')
@@ -1164,12 +1146,10 @@ BaseWorld.prototype.renderBlankSquare = function(sq) {
 // -----------------------------------------------------------------
 // render
 BaseWorld.prototype.render = function() {
-    //.canvas.clear();
 
-    // temporary ground-level indicator
-    // var levelc = new Isomer.Color(255,0,0, 0.5);
-    // this._layers.fg.add(new Isomer.Shape.Prism(new Isomer.Point(1, -1, -0.01), 1, 1, 0.01), levelc);
-    // this._layers.fg.add(new Isomer.Shape.Prism(new Isomer.Point(-1, 1, -0.01), 1, 1, 0.01), levelc);
+    for (var layerName in this._layers) {
+        this._layers[layerName].canvas.clear();
+    }
 
     var g = this._squares;
 
@@ -1231,9 +1211,11 @@ var defaultOptions = {
 
     worldSizeX: 10,     // size of world
     worldSizeY: 10,     // size of world
+
     worldOriginX: 0,    // starting X coord, in world units
     worldOriginY: 0,    // starting Y coord, in world units
     worldOriginZ: 0,    // starting Z coord, in world units
+
     worldScaleZ: 1,     // how many altitude units to a ground co-ord unit?
 
     colorScheme: 'bright',
@@ -1250,7 +1232,7 @@ var defaultOptions = {
 
 var colorSchemes = {
     'bright': {
-        'blank': new Color(180,180,180, 0.88),
+        'blank': new Color(180,180,180),
         'soil': new Color(110, 50, 35),
         'leaflitter': new Color(70, 120, 30),
         'water': new Color(50, 200, 255, 0.75),

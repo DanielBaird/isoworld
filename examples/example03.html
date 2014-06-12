@@ -7,7 +7,7 @@
         #world {
             width: 97%;
             margin: 1em auto;
-            height: 700px;
+            height: 500px;
             background: white;
         }
     </style>
@@ -19,21 +19,27 @@
 <script src="../dist/isoworld.js"></script>
 <script>
 
-    var wX = 5;
-    var wY = 8;
-    var blockSize = 5;
+    var wX = 30;
+    var wY = 20;
+    var blockSize = 4;
 
     var f = new World.Forest('world', {
         worldSizeX: wX,
         worldSizeY: wY,
-        blockSize: blockSize
+        blockSize: blockSize,
+        isoScale: 35
     });
+
+    f.autoRender(false);
 
     for (var x = 0; x < wX; x++) {
         for (var y = 0; y < wY; y++) {
             f.groundLevel(x, y, Math.random());
         }
     }
+
+    f.ground(2, 10, ['soil', 1, 'water', 3, 'soil']);
+
 /*
     for (var x = 0; x < worldSize; x++) {
         for (var y = 0; y < worldSize; y++) {
@@ -47,6 +53,7 @@
         }
     }
 */
+
     f.render();
 </script>
 
