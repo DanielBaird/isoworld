@@ -804,7 +804,7 @@ module.exports = Vector;
 
 module.exports = _dereq_('./worlds/allworlds.js');
 
-},{"./worlds/allworlds.js":13}],10:[function(_dereq_,module,exports){
+},{"./worlds/allworlds.js":14}],10:[function(_dereq_,module,exports){
 
 var Isomer = _dereq_('../../bower_components/isomer/index.js');
 var Point = Isomer.Point;
@@ -846,6 +846,37 @@ Block.prototype.render = function(iso, opts) {
 module.exports = Block;
 },{"../../bower_components/isomer/index.js":1}],11:[function(_dereq_,module,exports){
 
+var Isomer = _dereq_('../../bower_components/isomer/index.js');
+
+// -----------------------------------------------------------------
+function Feature(width, color) {
+    this.w = width;
+    if (color instanceof Isomer.Color) {
+        this.c = color;
+    } else {
+        this.c = new Isomer.Color(255, 255, 0);
+    }
+}
+// -----------------------------------------------------------------
+Feature.prototype.width = function(width) {
+    if (width !== undefined) {
+        this.w = width;
+    }
+    return this.w;
+}
+// -----------------------------------------------------------------
+Feature.prototype.render = function(iso, center, opts) {
+    var at = new Point( center[0], center[1], center[2] );
+    iso.add(
+        new Isomer.Path.Star(at, this.w/4, this.w/2, 5),
+        this.c
+    );
+}
+// -----------------------------------------------------------------
+module.exports = Feature;
+
+},{"../../bower_components/isomer/index.js":1}],12:[function(_dereq_,module,exports){
+
 
 var Block = _dereq_('./block.js');
 // -----------------------------------------------------------------
@@ -859,7 +890,7 @@ UnitColumn.prototype.constructor = UnitColumn;
 // -----------------------------------------------------------------
 module.exports = UnitColumn;
 
-},{"./block.js":10}],12:[function(_dereq_,module,exports){
+},{"./block.js":10}],13:[function(_dereq_,module,exports){
 
 // shim for Object.create, from MDN
 if (typeof Object.create != 'function') {
@@ -880,7 +911,7 @@ if (typeof Object.create != 'function') {
         };
     })();
 }
-},{}],13:[function(_dereq_,module,exports){
+},{}],14:[function(_dereq_,module,exports){
 
 var worldDefaults = _dereq_('./worlddefaults.js');
 var ForestWorld = _dereq_('./forestworld.js');
@@ -896,7 +927,7 @@ var World = {
 window.World = World;
 module.exports = World;
 
-},{"../../bower_components/isomer/index.js":1,"./forestworld.js":15,"./worlddefaults.js":16}],14:[function(_dereq_,module,exports){
+},{"../../bower_components/isomer/index.js":1,"./forestworld.js":16,"./worlddefaults.js":17}],15:[function(_dereq_,module,exports){
 
 _dereq_('../util/shims.js');
 
@@ -904,7 +935,9 @@ var defaults = _dereq_('./worlddefaults.js');
 var defaultOptions = defaults.options;
 var colorSchemes = defaults.colorSchemes;
 var Isomer = _dereq_('../../bower_components/isomer/index.js');
+
 var UnitColumn = _dereq_('../objects/unitcolumn.js');
+var Feature = _dereq_('../objects/feature.js');
 
 // -----------------------------------------------------------------
 // -----------------------------------------------------------------
@@ -1027,6 +1060,15 @@ BaseWorld.prototype.w2b = function(worldX, worldY, altitude) {
     var bY = Math.floor( (wY - opts.worldOriginY) / opts.blockSize );
     var bZ = (wZ - opts.worldOriginZ) / opts.blockSize * opts.worldScaleZ;
     return ([bX, bY, bZ]);
+}
+// -----------------------------------------------------------------
+// set the ground level for world coords x,y.
+BaseWorld.prototype.feature = function(x, y, feature) {
+    var blockCoords = this.w2b(x, y, 0);
+    var bX = blockCoords[0];
+    var bY = blockCoords[1];
+    this._squares[bX][bY].features.push(feature);
+    this.renderMaybe();
 }
 // -----------------------------------------------------------------
 // set the ground level for world coords x,y.
@@ -1210,12 +1252,10 @@ BaseWorld.prototype._copyGround = function(from, to) {
 // extrapolate all the ground columns
 BaseWorld.prototype._extrapolateGround = function() {
     'use strict';
-    var x, y;
     var sqs = this._squares;
     var maxX = sqs.length;
     var maxY = sqs[0].length;
-
-    var gs, dx, dy;
+    var x, y, dx, dy, gs;
     var dist, bestDist, candidate, bestCandidate;
 
     for (x = 0; x < maxX; x++) { for (y = 0; y < maxY; y++) {
@@ -1243,7 +1283,7 @@ BaseWorld.prototype._extrapolateGround = function() {
 // -----------------------------------------------------------------
 module.exports = BaseWorld;
 
-},{"../../bower_components/isomer/index.js":1,"../objects/unitcolumn.js":11,"../util/shims.js":12,"./worlddefaults.js":16}],15:[function(_dereq_,module,exports){
+},{"../../bower_components/isomer/index.js":1,"../objects/feature.js":11,"../objects/unitcolumn.js":12,"../util/shims.js":13,"./worlddefaults.js":17}],16:[function(_dereq_,module,exports){
 
 _dereq_('../util/shims.js');
 
@@ -1264,7 +1304,7 @@ ForestWorld.prototype.constructor = ForestWorld;
 // ...
 module.exports = ForestWorld;
 
-},{"../util/shims.js":12,"./baseworld.js":14}],16:[function(_dereq_,module,exports){
+},{"../util/shims.js":13,"./baseworld.js":15}],17:[function(_dereq_,module,exports){
 
 var Color = _dereq_('../../bower_components/isomer/index.js').Color;
 
@@ -1297,7 +1337,8 @@ var colorSchemes = {
     'bright': {
         'blank': new Color(180,180,180),
         'soil': new Color(110, 50, 35),
-        'leaflitter': new Color(70, 120, 30),
+        'sand': new Color(230, 200, 20),
+        'leaflitter': new Color(90, 110, 50),
         'water': new Color(50, 200, 255, 0.75),
         'wood': new Color(90, 50, 20, 0.66),
         'highlight': new Color(255, 255, 100, 0.1)
@@ -1305,6 +1346,7 @@ var colorSchemes = {
     'real': {
         'blank': new Color(125,125,125),
         'soil': new Color(50, 40, 30),
+        'sand': new Color(210, 190, 120),
         'leaflitter': new Color(50, 60, 40),
         'water': new Color(50, 150, 255, 0.75),
         'wood': new Color(50, 40, 30, 0.66),

@@ -30,7 +30,8 @@ var colorSchemes = {
     'bright': {
         'blank': new Color(180,180,180),
         'soil': new Color(110, 50, 35),
-        'leaflitter': new Color(70, 120, 30),
+        'sand': new Color(230, 200, 20),
+        'leaflitter': new Color(90, 110, 50),
         'water': new Color(50, 200, 255, 0.75),
         'wood': new Color(90, 50, 20, 0.66),
         'highlight': new Color(255, 255, 100, 0.1)
@@ -38,6 +39,7 @@ var colorSchemes = {
     'real': {
         'blank': new Color(125,125,125),
         'soil': new Color(50, 40, 30),
+        'sand': new Color(210, 190, 120),
         'leaflitter': new Color(50, 60, 40),
         'water': new Color(50, 150, 255, 0.75),
         'wood': new Color(50, 40, 30, 0.66),

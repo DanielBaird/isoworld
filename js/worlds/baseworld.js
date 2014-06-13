@@ -5,7 +5,9 @@ var defaults = require('./worlddefaults.js');
 var defaultOptions = defaults.options;
 var colorSchemes = defaults.colorSchemes;
 var Isomer = require('../../bower_components/isomer/index.js');
+
 var UnitColumn = require('../objects/unitcolumn.js');
+var Feature = require('../objects/feature.js');
 
 // -----------------------------------------------------------------
 // -----------------------------------------------------------------
@@ -128,6 +130,15 @@ BaseWorld.prototype.w2b = function(worldX, worldY, altitude) {
     var bY = Math.floor( (wY - opts.worldOriginY) / opts.blockSize );
     var bZ = (wZ - opts.worldOriginZ) / opts.blockSize * opts.worldScaleZ;
     return ([bX, bY, bZ]);
+}
+// -----------------------------------------------------------------
+// set the ground level for world coords x,y.
+BaseWorld.prototype.feature = function(x, y, feature) {
+    var blockCoords = this.w2b(x, y, 0);
+    var bX = blockCoords[0];
+    var bY = blockCoords[1];
+    this._squares[bX][bY].features.push(feature);
+    this.renderMaybe();
 }
 // -----------------------------------------------------------------
 // set the ground level for world coords x,y.
@@ -311,12 +322,10 @@ BaseWorld.prototype._copyGround = function(from, to) {
 // extrapolate all the ground columns
 BaseWorld.prototype._extrapolateGround = function() {
     'use strict';
-    var x, y;
     var sqs = this._squares;
     var maxX = sqs.length;
     var maxY = sqs[0].length;
-
-    var gs, dx, dy;
+    var x, y, dx, dy, gs;
     var dist, bestDist, candidate, bestCandidate;
 
     for (x = 0; x < maxX; x++) { for (y = 0; y < maxY; y++) {

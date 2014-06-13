@@ -21,42 +21,32 @@
 
     var wX = 100;
     var wY = 80;
-    var blockSize = 2;
+    var blockSize = 10;
 
     var f = new World.Forest('world', {
         worldSizeX: wX,
         worldSizeY: wY,
         blockSize: blockSize,
-        isoScale: 20
+        isoScale: 50
     });
 
     f.autoRender(false);
 
+    // set the altitude..
     for (var x = 0; x < wX; x++) {
         for (var y = 0; y < wY; y++) {
-            f.groundLevel(x, y, Math.random());
+            f.groundLevel(x, y, Math.random() * 3);
         }
     }
 
+    // set some ground stacks..
     f.ground(10, 0, ['water', 5, 'soil']);
     f.ground(0, 79, 'leaflitter');
-    f.ground(50, 0, ['wood', 2, 'leaflitter', 3, 'soil']);
+    f.ground(50, 0, ['sand', 2, 'leaflitter', 3, 'soil']);
     f.ground(90, 0, ['soil']);
     f.ground(99, 10, ['water']);
 
-    /*
-    for (var x = 0; x < worldSize; x++) {
-        for (var y = 0; y < worldSize; y++) {
-            var z = Math.random() * 0.5;
-            f.ground(x * 3 + 10, y * 6 + 20, z, [
-                new World.Color(50, 100, 50), Math.random() * 3,
-                new World.Color(80, 50, 30), Math.random() * 3,
-                new World.Color(120, 80, 40), Math.random() * 3,
-                new World.Color(200, 150, 50)
-            ]);
-        }
-    }
-    */
+    // add some features..
 
     f.render();
 </script>
