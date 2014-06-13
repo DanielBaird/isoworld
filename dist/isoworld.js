@@ -3,7 +3,7 @@
  *
  * Copyright 2014 Daniel Baird
  *
- * Date: 2014-06-12
+ * Date: 2014-06-13
  */
 !function(e){if("object"==typeof exports)module.exports=e();else if("function"==typeof define&&define.amd)define(e);else{var o;"undefined"!=typeof window?o=window:"undefined"!=typeof global?o=global:"undefined"!=typeof self&&(o=self),o.isoworld=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 /**
@@ -1102,7 +1102,7 @@ BaseWorld.prototype.setGroundLevel = function(x, y, z) {
 // setting will set from bedrock up to altitude in specified color
 BaseWorld.prototype.setGroundStack = function(x, y, stack) {
     if (this.validatePosition(x, y)) {
-        this._groundStacks.push({ x: x, y: y, stack: stack });
+        this._groundStacks.push({ x: x, y: y, ground: stack });
         this._extrapolateGround();
         // this._squares[x][y].ground = stack;
     }
@@ -1197,54 +1197,45 @@ BaseWorld.prototype._neighbours = function(x, y) {
 // copy a ground column between squares
 BaseWorld.prototype._copyGround = function(from, to) {
     var newLayer;
+    var fromZ = from.z;
+    if (fromZ === undefined) fromZ = 0;
     to.ground = [];
     for (var layerIndex = 0; layerIndex < from.ground.length; layerIndex++) {
         newLayer = from.ground[layerIndex].dupe();
-        newLayer.translate(to.x - from.x, to.y - from.y, to.z - from.z);
+        newLayer.translate(to.x - from.x, to.y - from.y, to.z - fromZ);
         to.ground.push(newLayer);
     }
 }
 // -----------------------------------------------------------------
 // extrapolate all the ground columns
 BaseWorld.prototype._extrapolateGround = function() {
-    var x, y, gs;
+    'use strict';
+    var x, y;
     var sqs = this._squares;
     var maxX = sqs.length;
     var maxY = sqs[0].length;
 
-    // clear all the ground columns
+    var gs, dx, dy;
+    var dist, bestDist, candidate, bestCandidate;
+
     for (x = 0; x < maxX; x++) { for (y = 0; y < maxY; y++) {
-        sqs[x][y].ground = undefined;
+        bestCandidate = undefined;
+        bestDist = maxX*maxX + maxY*maxY;
+        for (gs = 0; gs < this._groundStacks.length; gs++) {
+            candidate = this._groundStacks[gs];
+            dx = x - candidate.x;
+            dy = y - candidate.y;
+            dist = dx*dx + dy*dy;
+            if (dist < bestDist) {
+                bestDist = dist;
+                bestCandidate = candidate;
+            }
+        }
+        if (bestCandidate) {
+            this._copyGround(bestCandidate, this._squares[x][y]);
+        }
     }}
 
-    // go through the list of known ground columns and set each one
-    for (var gsIndex = 0; gsIndex < this._groundStacks.length; gsIndex++) {
-        gs = this._groundStacks[gsIndex];
-        sqs[gs.x][gs.y].ground = gs.stack;
-    }
-
-    // go through all the squares, copying each square's ground stack
-    // into any un-set neighbours.
-    var changed = 1;
-    var neighbours, n, nsq, sq;
-    while (changed > 0) {
-        changed = 0;
-        for (x = 0; x < maxX; x++) { for (y = 0; y < maxY; y++) {
-            sq = sqs[x][y];
-            if (sq.ground !== undefined) {
-                // okay this square has a ground stack.
-                // set its neighbours..
-                neighbours = this._neighbours(x, y);
-                for (var nIndex = 0; nIndex < neighbours.length; nIndex++) {
-                    nsq = sqs[neighbours[nIndex].x][neighbours[nIndex].y];
-                    if (nsq.ground === undefined) {
-                        changed++;
-                        this._copyGround(sq, nsq);
-                    }
-                }
-            }
-        }}
-    }
     this.renderMaybe();
 
 }
