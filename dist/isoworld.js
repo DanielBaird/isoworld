@@ -3,7 +3,7 @@
  *
  * Copyright 2014 Daniel Baird
  *
- * Date: 2014-06-13
+ * Date: 2014-06-15
  */
 !function(e){if("object"==typeof exports)module.exports=e();else if("function"==typeof define&&define.amd)define(e);else{var o;"undefined"!=typeof window?o=window:"undefined"!=typeof global?o=global:"undefined"!=typeof self&&(o=self),o.isoworld=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 /**
@@ -847,6 +847,7 @@ module.exports = Block;
 },{"../../bower_components/isomer/index.js":1}],11:[function(_dereq_,module,exports){
 
 var Isomer = _dereq_('../../bower_components/isomer/index.js');
+var Point = Isomer.Point;
 
 // -----------------------------------------------------------------
 function Feature(width, color) {
@@ -868,7 +869,7 @@ Feature.prototype.width = function(width) {
 Feature.prototype.render = function(iso, center, opts) {
     var at = new Point( center[0], center[1], center[2] );
     iso.add(
-        new Isomer.Path.Star(at, this.w/4, this.w/2, 5),
+        new Isomer.Path.Star(at, this.w/6, this.w/2, 9),
         this.c
     );
 }
@@ -990,7 +991,7 @@ BaseWorld.prototype.getColor = function(type) {
     return color
 }
 // -----------------------------------------------------------------
-// merge new options into our options
+// init the three layers
 BaseWorld.prototype.makeLayers = function(domElement) {
     // first, handle the dom thing we have.
     if (domElement instanceof Element) {
@@ -1062,11 +1063,16 @@ BaseWorld.prototype.w2b = function(worldX, worldY, altitude) {
     return ([bX, bY, bZ]);
 }
 // -----------------------------------------------------------------
-// set the ground level for world coords x,y.
+// add a feature at world coords x,y
 BaseWorld.prototype.feature = function(x, y, feature) {
     var blockCoords = this.w2b(x, y, 0);
     var bX = blockCoords[0];
     var bY = blockCoords[1];
+
+    if (!feature) {
+        feature = new Feature(0.5);
+    }
+
     this._squares[bX][bY].features.push(feature);
     this.renderMaybe();
 }
@@ -1077,6 +1083,7 @@ BaseWorld.prototype.groundLevel = function(x, y, altitude) {
     var bX = blockCoords[0];
     var bY = blockCoords[1];
     var bZ = blockCoords[2];
+    console.log('ground level at ' + x + ', ' + y + ' is ' + altitude + ' -> ' + bZ);
     this.setGroundLevel(bX, bY, bZ);
     this.renderMaybe();
 }
@@ -1098,29 +1105,31 @@ BaseWorld.prototype.ground = function(x, y, stack) {
     var groundStack = [];
 
     if (stack instanceof Array) {
-        // if the caller supplied an actual stack of thickness & color,
-        // go through the stack..
+        // if the caller supplied an actual stack of type & thickness,
+        // go through the stack in pairs..
         for (stackPos = 0; stackPos < stack.length; stackPos = stackPos + 2) {
             layerColor = this.getColor(stack[stackPos]);
             if (stackPos < stack.length - 1) {
                 layerThickness = this.w2bVertical( stack[stackPos + 1] );
             } else {
-                layerThickness = height - this._opts.bedrockLevel;
+                layerThickness = height - this.w2bVertical( this._opts.bedrockLevel );
             }
-            height -= layerThickness;
-            column = new UnitColumn(
-                bX, bY, height,
-                layerThickness, layerColor
-            );
+            console.log('layer thickness of ' + stack[stackPos] + ' is ' + layerThickness);
             if (layerThickness > 0) {
+                height -= layerThickness;
+                column = new UnitColumn(
+                    bX, bY, height,
+                    layerThickness, layerColor
+                );
                 groundStack.unshift(column);
             }
         }
+
     } else {
         // otherwise they must've given us a Color
         groundStack.unshift(new UnitColumn(
-            bX, bY, this._opts.bedrockLevel,
-            bZ - this._opts.bedrockLevel, this.getColor(stack)));
+            bX, bY, this.w2bVertical( this._opts.bedrockLevel ),
+            bZ - this.w2bVertical( this._opts.bedrockLevel ), this.getColor(stack)));
     }
 
     this.setGroundStack(bX, bY, groundStack);
@@ -1146,7 +1155,6 @@ BaseWorld.prototype.setGroundStack = function(x, y, stack) {
     if (this.validatePosition(x, y)) {
         this._groundStacks.push({ x: x, y: y, ground: stack });
         this._extrapolateGround();
-        // this._squares[x][y].ground = stack;
     }
 }
 // -----------------------------------------------------------------
@@ -1161,32 +1169,30 @@ BaseWorld.prototype.renderSquare = function(x, y) {
             for (layer in sq.ground) {
                 sq.ground[layer].render(this._layers.fg, this._opts);
             }
+            console.log(sq.z, sq.ground[sq.ground.length - 1]);
         } else {
             // no ground recorded, draw a blank column
             this.renderBlankSquare(sq);
+        }
+        // now do features..
+        var f, feature;
+        for (var f=0; f < sq.features.length; f++) {
+            feature = sq.features[f];
+            console.log(sq.z, feature);
+            feature.render(this._layers.fg, [x + 0.5, y + 0.5, sq.z], this._opts);
         }
     }
 }
 // -----------------------------------------------------------------
 // render a blank square
 BaseWorld.prototype.renderBlankSquare = function(sq) {
-    if (! this._blankBlock) {
-        this._blankBlock = new Isomer.Shape.Prism(
-            new Isomer.Point(0, 0, this._opts.bedrockLevel),
-            1 - this._opts.isoGap,
-            1 - this._opts.isoGap,
-            0 - this._opts.bedrockLevel
-        );
-    }
-    var zScale = 1;
-    if (sq.z && sq.z != 0) {
-        zScale = (0 - this._opts.bedrockLevel + sq.z) / (0 - this._opts.bedrockLevel)
-    }
     this._layers.fg.add(
-        this._blankBlock.scale(
-            new Isomer.Point(0, 0, this._opts.bedrockLevel),
-            1, 1, zScale
-        ).translate(sq.x, sq.y, sq.z),
+        new Isomer.Shape.Prism(
+            new Isomer.Point(sq.x, sq.y, this._opts.bedrockLevel),
+            1 - this._opts.isoGap,
+            1 - this._opts.isoGap,
+            0 - this._opts.bedrockLevel + (sq.z ? sq.z : 0)
+        ),
         this.getColor('blank')
     );
 }
@@ -1322,7 +1328,7 @@ var defaultOptions = {
     worldScaleZ: 1,     // how many altitude units to a ground co-ord unit?
 
     colorScheme: 'bright',
-    bedrockLevel: -10,
+    bedrockLevel: -3,
     blockSize: 1,       // how many 'world' units long is one side of a block?
     isoGap: 0.05,       // gap to leave between blocks
 

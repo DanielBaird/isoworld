@@ -15,7 +15,7 @@ var defaultOptions = {
     worldScaleZ: 1,     // how many altitude units to a ground co-ord unit?
 
     colorScheme: 'bright',
-    bedrockLevel: -10,
+    bedrockLevel: -3,
     blockSize: 1,       // how many 'world' units long is one side of a block?
     isoGap: 0.05,       // gap to leave between blocks
 

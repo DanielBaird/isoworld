@@ -7,7 +7,7 @@
         #world {
             width: 97%;
             margin: 1em auto;
-            height: 700px;
+            height: 500px;
             background: white;
         }
     </style>
@@ -21,32 +21,41 @@
 
     var wX = 100;
     var wY = 80;
-    var blockSize = 10;
+    var blockSize = 50;
+
+    wX = 3;
+    wY = 1;
+    blockSize = 1;
 
     var f = new World.Forest('world', {
         worldSizeX: wX,
         worldSizeY: wY,
         blockSize: blockSize,
-        isoScale: 50
+        isoScale: 70
     });
 
     f.autoRender(false);
 
-    // set the altitude..
-    for (var x = 0; x < wX; x++) {
-        for (var y = 0; y < wY; y++) {
-            f.groundLevel(x, y, Math.random() * 3);
-        }
-    }
+    f.groundLevel(1, 0, 1);
+    f.ground(1, 0, ['water', 0.5, 'sand', 2, 'soil']);
+    f.feature(1,0);
+
+    // // set the altitude..
+    // for (var x = 0; x < wX; x++) {
+    //     for (var y = 0; y < wY; y++) {
+    //         f.groundLevel(x, y, Math.random() * 1);
+    //     }
+    // }
 
     // set some ground stacks..
-    f.ground(10, 0, ['water', 5, 'soil']);
-    f.ground(0, 79, 'leaflitter');
-    f.ground(50, 0, ['sand', 2, 'leaflitter', 3, 'soil']);
-    f.ground(90, 0, ['soil']);
-    f.ground(99, 10, ['water']);
+    // f.ground(1, 0, ['water', 0.5, 'sand', 2, 'soil']);
+    // f.ground(90, 0, ['soil']);
+    // f.ground(50, 0, ['sand', 2, 'leaflitter', 3, 'soil']);
+    // f.ground(0, 79, 'leaflitter');
+    // f.ground(99, 10, ['water']);
 
-    // add some features..
+    // // add some features..
+    // f.feature(10,10);
 
     f.render();
 </script>
