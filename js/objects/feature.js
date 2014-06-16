@@ -22,7 +22,7 @@ Feature.prototype.width = function(width) {
 Feature.prototype.render = function(iso, center, opts) {
     var at = new Point( center[0], center[1], center[2] );
     iso.add(
-        new Isomer.Path.Star(at, this.w/6, this.w/2, 9),
+        new Isomer.Path.Star(at, this.w/6, this.w/2, 11),
         this.c
     );
 }

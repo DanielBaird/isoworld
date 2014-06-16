@@ -107,10 +107,14 @@ BaseWorld.prototype.autoRender = function(yesno) {
     return this._opts.autoRender;
 }
 // -----------------------------------------------------------------
-// convert world height to block z
-BaseWorld.prototype.w2bVertical = function(altitude) {
-    var ans = (altitude - this._opts.worldOriginZ) / this._opts.blockSize * this._opts.worldScaleZ;
-    return ans;
+// convert absolute world height to absolute block z
+BaseWorld.prototype.w2bZ = function(altitude) {
+    return (this.w2bZDelta(altitude - this._opts.worldOriginZ));
+}
+// -----------------------------------------------------------------
+// convert world height delta to block z delta
+BaseWorld.prototype.w2bZDelta = function(height) {
+    return (height / this._opts.blockSize * this._opts.worldScaleZ);
 }
 // -----------------------------------------------------------------
 // convert world coordinates to block coordinates
@@ -152,7 +156,6 @@ BaseWorld.prototype.groundLevel = function(x, y, altitude) {
     var bX = blockCoords[0];
     var bY = blockCoords[1];
     var bZ = blockCoords[2];
-    console.log('ground level at ' + x + ', ' + y + ' is ' + altitude + ' -> ' + bZ);
     this.setGroundLevel(bX, bY, bZ);
     this.renderMaybe();
 }
@@ -168,41 +171,36 @@ BaseWorld.prototype.ground = function(x, y, stack) {
     var bY = blockCoords[1];
     var bZ = this._squares[bX][bY].z;
 
-    var height = bZ;
-    var stackPos, layerThickness, layerColor, column;
-
-    var groundStack = [];
-
-    if (stack instanceof Array) {
-        // if the caller supplied an actual stack of type & thickness,
-        // go through the stack in pairs..
-        for (stackPos = 0; stackPos < stack.length; stackPos = stackPos + 2) {
-            layerColor = this.getColor(stack[stackPos]);
-            if (stackPos < stack.length - 1) {
-                layerThickness = this.w2bVertical( stack[stackPos + 1] );
-            } else {
-                layerThickness = height - this.w2bVertical( this._opts.bedrockLevel );
-            }
-            console.log('layer thickness of ' + stack[stackPos] + ' is ' + layerThickness);
-            if (layerThickness > 0) {
-                height -= layerThickness;
-                column = new UnitColumn(
-                    bX, bY, height,
-                    layerThickness, layerColor
-                );
-                groundStack.unshift(column);
-            }
-        }
-
-    } else {
-        // otherwise they must've given us a Color
-        groundStack.unshift(new UnitColumn(
-            bX, bY, this.w2bVertical( this._opts.bedrockLevel ),
-            bZ - this.w2bVertical( this._opts.bedrockLevel ), this.getColor(stack)));
-    }
-
+    var groundStack = this.listToStack(stack, bX, bY);
     this.setGroundStack(bX, bY, groundStack);
     this.renderMaybe();
+}
+// -----------------------------------------------------------------
+// turn an array of type/depth e.g. ['water', 2, sand', 1, 'soil']
+// into an array of ground blocks
+BaseWorld.prototype.listToStack = function(list, bX, bY) {
+
+    var listPos, color, thickness;
+    var stack = [];
+    var height = 0;
+
+    for (listIndex = 0; listIndex < list.length; listIndex = listIndex + 2) {
+        // list[listIndex] is the type of this layer
+        color = this.getColor(list[listIndex]);
+
+        // list[listIndex + 1] is the thickness of the layer
+        if (listIndex < list.length - 1) {
+            thickness = this.w2bZDelta( list[listIndex + 1] );
+        } else {
+            thickness = height - this.w2bZ( this._opts.bedrockLevel );
+        }
+        if (thickness > 0) {
+            height -= thickness;
+            column = new UnitColumn(bX, bY, height, thickness, color);
+            stack.unshift(column);
+        }
+    }
+    return stack;
 }
 // -----------------------------------------------------------------
 // make sure a square exists at x,y.  Grow the world as necessary
@@ -231,39 +229,38 @@ BaseWorld.prototype.setGroundStack = function(x, y, stack) {
 BaseWorld.prototype.renderSquare = function(x, y) {
 
     var sq = this._squares[x][y];
+    var bedrockZ;
+
     if (sq !== undefined) {
+
         // is there a ground column?
+        var g, groundLayer;
         if (sq.ground && sq.ground.length > 0) {
             // render ground column
-            for (layer in sq.ground) {
-                sq.ground[layer].render(this._layers.fg, this._opts);
+            for (var g=0; g < sq.ground.length; g++) {
+                groundLayer = sq.ground[g];
+                groundLayer.render(this._layers.fg, this._opts);
             }
-            console.log(sq.z, sq.ground[sq.ground.length - 1]);
         } else {
             // no ground recorded, draw a blank column
-            this.renderBlankSquare(sq);
+            bedrockZ = this.w2bZ(this._opts.bedrockLevel);
+            groundLayer = new UnitColumn(
+                x, y, bedrockZ,
+                (sq.z ? sq.z : 0) - bedrockZ,
+                this.getColor('blank')
+            );
+            groundLayer.render(this._layers.fg, this._opts);
         }
+
         // now do features..
         var f, feature;
-        for (var f=0; f < sq.features.length; f++) {
-            feature = sq.features[f];
-            console.log(sq.z, feature);
-            feature.render(this._layers.fg, [x + 0.5, y + 0.5, sq.z], this._opts);
+        if (sq.features && sq.features.length > 0) {
+            for (var f=0; f < sq.features.length; f++) {
+                feature = sq.features[f];
+                feature.render(this._layers.fg, [x + 0.5, y + 0.5, sq.z], this._opts);
+            }
         }
     }
-}
-// -----------------------------------------------------------------
-// render a blank square
-BaseWorld.prototype.renderBlankSquare = function(sq) {
-    this._layers.fg.add(
-        new Isomer.Shape.Prism(
-            new Isomer.Point(sq.x, sq.y, this._opts.bedrockLevel),
-            1 - this._opts.isoGap,
-            1 - this._opts.isoGap,
-            0 - this._opts.bedrockLevel + (sq.z ? sq.z : 0)
-        ),
-        this.getColor('blank')
-    );
 }
 // -----------------------------------------------------------------
 // render
@@ -290,6 +287,20 @@ BaseWorld.prototype.render = function() {
         }
         coordSum -= 1;
     }
+
+    // draw on origin lines, coz why not
+    // if (true) {
+    if (false) {
+        this._layers.fg.add(new Isomer.Path([
+            new Isomer.Point(0,-0.01,0), new Isomer.Point(0,0.01,0), new Isomer.Point(10,0,0)
+        ]), new Isomer.Color(255,0,0));
+        this._layers.fg.add(new Isomer.Path([
+            new Isomer.Point(-0.01,0,0), new Isomer.Point(0.01,0,0), new Isomer.Point(0,10,0)
+        ]), new Isomer.Color(255,0,0));
+        this._layers.fg.add(new Isomer.Path([
+            new Isomer.Point(-0.01,-0.01,0), new Isomer.Point(0.01,0.01,0), new Isomer.Point(0,0,10)
+        ]), new Isomer.Color(255,0,0));
+    }
 }
 // -----------------------------------------------------------------
 // render, only if we're supoosed to re-render automatically
@@ -315,18 +326,26 @@ BaseWorld.prototype._neighbours = function(x, y) {
 BaseWorld.prototype._copyGround = function(from, to) {
     var newLayer;
     var fromZ = from.z;
+    var aboveBedrock = to.z - this.w2bZ(this._opts.bedrockLevel);
+
     if (fromZ === undefined) fromZ = 0;
     to.ground = [];
-    for (var layerIndex = 0; layerIndex < from.ground.length; layerIndex++) {
-        newLayer = from.ground[layerIndex].dupe();
-        newLayer.translate(to.x - from.x, to.y - from.y, to.z - fromZ);
-        to.ground.push(newLayer);
+    for (var layerIndex = from.ground.length - 1; layerIndex >=0; layerIndex--) {
+        if (aboveBedrock > 0) {
+            // only add another layer if we're still above bedrock
+            newLayer = from.ground[layerIndex].dupe();
+            newLayer.translate(to.x - from.x, to.y - from.y, to.z - fromZ);
+            aboveBedrock -= newLayer.h;
+            to.ground.unshift(newLayer);
+        }
     }
+    // now fix up the bottom layer so it reaches bedrock
+    to.ground[0].z -= aboveBedrock;
+    to.ground[0].h += aboveBedrock;
 }
 // -----------------------------------------------------------------
 // extrapolate all the ground columns
 BaseWorld.prototype._extrapolateGround = function() {
-    'use strict';
     var sqs = this._squares;
     var maxX = sqs.length;
     var maxY = sqs[0].length;

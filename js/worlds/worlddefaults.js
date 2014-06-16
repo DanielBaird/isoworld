@@ -15,13 +15,13 @@ var defaultOptions = {
     worldScaleZ: 1,     // how many altitude units to a ground co-ord unit?
 
     colorScheme: 'bright',
-    bedrockLevel: -3,
+    bedrockLevel: -10,
     blockSize: 1,       // how many 'world' units long is one side of a block?
     isoGap: 0.05,       // gap to leave between blocks
 
     // Isomer rendering options.
     isoScale: 60,       // pixel length of a 1x1x1 block.  Isomer default is 70
-    isoAngle: Math.PI/8,  // Math.PI/4 ~ Math.PI/15.  Isomer default is Math.PI/6
+    isoAngle: Math.PI/7,  // Math.PI/4 ~ Math.PI/15.  Isomer default is Math.PI/6
 
     dummy: "has no trailing comma"
 }
