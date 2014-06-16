@@ -4,6 +4,7 @@ var Color = require('../../bower_components/isomer/index.js').Color;
 var defaultOptions = {
 
     autoRender: true,
+    autoSize: false,
 
     worldSizeX: 10,     // size of world
     worldSizeY: 10,     // size of world

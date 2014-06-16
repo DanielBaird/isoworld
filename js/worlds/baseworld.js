@@ -19,12 +19,38 @@ function BaseWorld(domElement, options) {
 
     this._groundStacks = [];
     this._groundHeight = [];
+
     this._layers = this.makeLayers(domElement);
 
     this._colors = colorSchemes[this._opts.colorScheme];
     if (this._colors === undefined) {
         this._colors = { 'blank': new Isomer.Color(255,75,75,0.66) };
     }
+
+    // auto-size?
+    if (this._opts.autoSize) {
+        this.autoSize();
+    }
+}
+// -----------------------------------------------------------------
+// work out a block size that will fit our world
+BaseWorld.prototype.autoSize = function() {
+
+    var opts = this._opts;
+
+    // get the canvas size
+    var cW = this._layers.fg.clientWidth;
+    var cH = this._layers.fg.clientHeight;
+
+    // get the block counts
+    var bX = this._squares.length;
+    var bY = this._squares[0].length;
+
+    // the display is x + y block-diagonals across.
+    var bW = (bX + bY) * Math.cos(opts.isoAngle) * opts.isoScale;
+
+    // TODO ******** write more code to do the thing
+
 }
 // -----------------------------------------------------------------
 // init our squares
