@@ -4,7 +4,7 @@
         html, body {
             background: #eee;
         }
-        #world {
+        #theDiv {
             width: 97%;
             margin: 1em auto;
             height: 500px;
@@ -14,20 +14,20 @@
 </head>
 <body>
 
-<div id="world"></div>
+<div id="theDiv"></div>
 
 <script src="../dist/isoworld.js"></script>
 <script>
 
     var wX = 100;
-    var wY = 80;
-    var blockSize = 8;
+    var wY = 100;
+    var blockSize = 10;
 
-    var f = new World.Forest('world', {
+    var f = new World.Forest('theDiv', {
+        autoSize: true,
         worldSizeX: wX,
         worldSizeY: wY,
-        blockSize: blockSize,
-        isoScale: 50
+        blockSize: blockSize
     });
 
     f.autoRender(false);
@@ -39,6 +39,8 @@
         }
     }
 
+    f.groundLevel(wX - 1, wY - 1, 5);
+
     // set some ground stacks..
     f.ground(1, 0, ['water', 0.5, 'sand', 2, 'soil']);
     f.ground(90, 0, ['soil']);
@@ -48,8 +50,7 @@
 
     // add some features..
     f.feature(10,10);
-
-    // add some features..
+    f.feature(wX/2, wY/2);
     f.feature(77,22);
 
     f.render();

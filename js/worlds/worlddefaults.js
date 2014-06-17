@@ -3,26 +3,46 @@ var Color = require('../../bower_components/isomer/index.js').Color;
 
 var defaultOptions = {
 
-    autoRender: true,
-    autoSize: false,
+    autoRender:  true,
+    autoSize:   false,
 
-    worldSizeX: 10,     // size of world
-    worldSizeY: 10,     // size of world
+    worldSizeX:    10,    // size of world
+    worldSizeY:    10,    // size of world
 
-    worldOriginX: 0,    // starting X coord, in world units
-    worldOriginY: 0,    // starting Y coord, in world units
-    worldOriginZ: 0,    // starting Z coord, in world units
+    worldOriginX:   0,    // starting X coord, in world units
+    worldOriginY:   0,    // starting Y coord, in world units
+    worldOriginZ:   0,    // starting Z coord, in world units
 
-    worldScaleZ: 1,     // how many altitude units to a ground co-ord unit?
+    worldScaleZ:    1,    // how many altitude units to a ground co-ord unit?
 
     colorScheme: 'bright',
-    bedrockLevel: -10,
-    blockSize: 1,       // how many 'world' units long is one side of a block?
-    isoGap: 0.05,       // gap to leave between blocks
+    maxHeight:      5,    // max height of interesting features (used to auto-size)
+    minHeight:     -8,    // minimum height of interesting features (used to auto-size)
+    bedrockLevel:  -8,    // how far down to stop drawing the ground
+
+    blockSize:      1,    // how many 'world' units long is one side of a block?
+    isoGap:         0.05, // gap to leave between blocks
 
     // Isomer rendering options.
+    //
+    //                 '-_
+    //         isoScale   '-_
+    //        '-_            _-_
+    //           '-_      _-'   '-_
+    //  ____________   _-'         '-_
+    //    ^           |-_           _-|
+    //    :           |  '-_     _-'  |      _
+    //    : isoScale  |     '-_-'     |   _-'
+    //    v           |       |       | -'
+    //  ------------  '-_     |     _-'
+    //                   '-_  |  _-'   isoAngle
+    //                      '-_-' __________________
+    //
     isoScale: 60,       // pixel length of a 1x1x1 block.  Isomer default is 70
     isoAngle: Math.PI/7,  // Math.PI/4 ~ Math.PI/15.  Isomer default is Math.PI/6
+
+    // isoOriginX: 450, // OPTIONAL in pixels, where point 0,0,0 is on the canvas
+    // isoOriginY: 450, // OPTIONAL in pixels, where point 0,0,0 is on the canvas
 
     dummy: "has no trailing comma"
 }

@@ -3,7 +3,7 @@
  *
  * Copyright 2014 Daniel Baird
  *
- * Date: 2014-06-16
+ * Date: 2014-06-17
  */
 !function(e){if("object"==typeof exports)module.exports=e();else if("function"==typeof define&&define.amd)define(e);else{var o;"undefined"!=typeof window?o=window:"undefined"!=typeof global?o=global:"undefined"!=typeof self&&(o=self),o.isoworld=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 /**
@@ -951,12 +951,54 @@ function BaseWorld(domElement, options) {
 
     this._groundStacks = [];
     this._groundHeight = [];
-    this._layers = this.makeLayers(domElement);
+
+    this._dom = this.resolveDom(domElement);
+    this._layers = this.makeLayers();
 
     this._colors = colorSchemes[this._opts.colorScheme];
     if (this._colors === undefined) {
         this._colors = { 'blank': new Isomer.Color(255,75,75,0.66) };
     }
+
+    // auto-size?
+    if (this._opts.autoSize) {
+        this.autoSize();
+    }
+}
+// -----------------------------------------------------------------
+// work out a block size that will fit our world
+BaseWorld.prototype.autoSize = function() {
+
+    var opts = this._opts;
+
+    // get the canvas size
+    var cW = this._layers.fg.canvas.width;
+    var cH = this._layers.fg.canvas.height;
+
+    // get the block counts
+    var bX = this._squares.length;
+    var bY = this._squares[0].length;
+
+    var extraHeight = opts.maxHeight - opts.minHeight;
+    var xyBlocks = bX + bY + (2 * this.w2bZDelta(extraHeight));
+
+    // the display is x+y block-diagonals across, and x+y diagonals tall
+    var bW = xyBlocks * Math.cos(opts.isoAngle);
+    var bH = xyBlocks * Math.sin(opts.isoAngle);
+
+    // work stuff out.
+    var hConstraint = cH / bH;
+    var wConstraint = cW / bW;
+    opts.isoScale = Math.min(hConstraint, wConstraint) * 0.95; // a 5% allowance
+
+    // position the origin
+    var sidePad = Math.max(0, (cW - (opts.isoScale * xyBlocks)) / 2);
+    opts.isoOriginX = sidePad * 1.05 + ((cW - sidePad - sidePad) * bY / (bX + bY));
+    opts.isoOriginY = cH - (this.w2bZDelta(0 - opts.minHeight) * opts.isoScale * 1.05); // 5% allowance again
+
+    // rebuild the layers
+    this._layers = this.makeLayers();
+    this.render();
 }
 // -----------------------------------------------------------------
 // init our squares
@@ -993,21 +1035,26 @@ BaseWorld.prototype.getColor = function(type) {
 }
 // -----------------------------------------------------------------
 // init the three layers
-BaseWorld.prototype.makeLayers = function(domElement) {
-    // first, handle the dom thing we have.
+BaseWorld.prototype.resolveDom = function(domElement) {
     if (domElement instanceof Element) {
-        this._dom = domElement;
+        return domElement;
     } else {
         //maybe it's a string, which we'll assume is an id
-        this._dom = document.getElementById(domElement);
+        return document.getElementById(domElement);
     }
-
+}
+// -----------------------------------------------------------------
+// init the three layers
+BaseWorld.prototype.makeLayers = function() {
+    var opts = this._opts;
     var w = this._dom.clientWidth;
     var h = this._dom.clientHeight;
     var isoOpts = {
-        scale: this._opts.isoScale,
-        angle: this._opts.isoAngle
+        scale: opts.isoScale,
+        angle: opts.isoAngle
     }
+    if (opts.isoOriginX) isoOpts['originX'] = opts.isoOriginX;
+    if (opts.isoOriginY) isoOpts['originY'] = opts.isoOriginY;
 
     this._dom.innerHTML = '' +
         '<style>.isoworld { position: absolute; top: 0, bottom: 0, left: 0, right: 0 }</style>' +
@@ -1101,11 +1148,17 @@ BaseWorld.prototype.ground = function(x, y, stack) {
     var blockCoords = this.w2b(x, y, 0);
     var bX = blockCoords[0];
     var bY = blockCoords[1];
-    var bZ = this._squares[bX][bY].z;
 
-    var groundStack = this.listToStack(stack, bX, bY);
-    this.setGroundStack(bX, bY, groundStack);
-    this.renderMaybe();
+    if (this.validatePosition(bX, bY)) {
+
+        var bZ = this._squares[bX][bY].z;
+
+        var groundStack = this.listToStack(stack, bX, bY);
+        this.setGroundStack(bX, bY, groundStack);
+        this.renderMaybe();
+    } else {
+        console.log('IsoWorld: cannot set out-of-range ground stack at (' + x + ', ' + y + '), ignoring.');
+    }
 }
 // -----------------------------------------------------------------
 // turn an array of type/depth e.g. ['water', 2, sand', 1, 'soil']
@@ -1135,7 +1188,7 @@ BaseWorld.prototype.listToStack = function(list, bX, bY) {
     return stack;
 }
 // -----------------------------------------------------------------
-// make sure a square exists at x,y.  Grow the world as necessary
+// make sure a square exists at x,y
 BaseWorld.prototype.validatePosition = function(x, y) {
     var sq = this._squares;
     return (!(x < 0 || y < 0 || x >= sq.length || y >= sq[0].length));
@@ -1336,25 +1389,46 @@ var Color = _dereq_('../../bower_components/isomer/index.js').Color;
 
 var defaultOptions = {
 
-    autoRender: true,
+    autoRender:  true,
+    autoSize:   false,
 
-    worldSizeX: 10,     // size of world
-    worldSizeY: 10,     // size of world
+    worldSizeX:    10,    // size of world
+    worldSizeY:    10,    // size of world
 
-    worldOriginX: 0,    // starting X coord, in world units
-    worldOriginY: 0,    // starting Y coord, in world units
-    worldOriginZ: 0,    // starting Z coord, in world units
+    worldOriginX:   0,    // starting X coord, in world units
+    worldOriginY:   0,    // starting Y coord, in world units
+    worldOriginZ:   0,    // starting Z coord, in world units
 
-    worldScaleZ: 1,     // how many altitude units to a ground co-ord unit?
+    worldScaleZ:    1,    // how many altitude units to a ground co-ord unit?
 
     colorScheme: 'bright',
-    bedrockLevel: -10,
-    blockSize: 1,       // how many 'world' units long is one side of a block?
-    isoGap: 0.05,       // gap to leave between blocks
+    maxHeight:      5,    // max height of interesting features (used to auto-size)
+    minHeight:     -8,    // minimum height of interesting features (used to auto-size)
+    bedrockLevel:  -8,    // how far down to stop drawing the ground
+
+    blockSize:      1,    // how many 'world' units long is one side of a block?
+    isoGap:         0.05, // gap to leave between blocks
 
     // Isomer rendering options.
+    //
+    //                 '-_
+    //         isoScale   '-_
+    //        '-_            _-_
+    //           '-_      _-'   '-_
+    //  ____________   _-'         '-_
+    //    ^           |-_           _-|
+    //    :           |  '-_     _-'  |      _
+    //    : isoScale  |     '-_-'     |   _-'
+    //    v           |       |       | -'
+    //  ------------  '-_     |     _-'
+    //                   '-_  |  _-'   isoAngle
+    //                      '-_-' __________________
+    //
     isoScale: 60,       // pixel length of a 1x1x1 block.  Isomer default is 70
     isoAngle: Math.PI/7,  // Math.PI/4 ~ Math.PI/15.  Isomer default is Math.PI/6
+
+    // isoOriginX: 450, // OPTIONAL in pixels, where point 0,0,0 is on the canvas
+    // isoOriginY: 450, // OPTIONAL in pixels, where point 0,0,0 is on the canvas
 
     dummy: "has no trailing comma"
 }

@@ -20,7 +20,8 @@ function BaseWorld(domElement, options) {
     this._groundStacks = [];
     this._groundHeight = [];
 
-    this._layers = this.makeLayers(domElement);
+    this._dom = this.resolveDom(domElement);
+    this._layers = this.makeLayers();
 
     this._colors = colorSchemes[this._opts.colorScheme];
     if (this._colors === undefined) {
@@ -39,18 +40,33 @@ BaseWorld.prototype.autoSize = function() {
     var opts = this._opts;
 
     // get the canvas size
-    var cW = this._layers.fg.clientWidth;
-    var cH = this._layers.fg.clientHeight;
+    var cW = this._layers.fg.canvas.width;
+    var cH = this._layers.fg.canvas.height;
 
     // get the block counts
     var bX = this._squares.length;
     var bY = this._squares[0].length;
 
-    // the display is x + y block-diagonals across.
-    var bW = (bX + bY) * Math.cos(opts.isoAngle) * opts.isoScale;
+    var extraHeight = opts.maxHeight - opts.minHeight;
+    var xyBlocks = bX + bY + (2 * this.w2bZDelta(extraHeight));
 
-    // TODO ******** write more code to do the thing
+    // the display is x+y block-diagonals across, and x+y diagonals tall
+    var bW = xyBlocks * Math.cos(opts.isoAngle);
+    var bH = xyBlocks * Math.sin(opts.isoAngle);
 
+    // work stuff out.
+    var hConstraint = cH / bH;
+    var wConstraint = cW / bW;
+    opts.isoScale = Math.min(hConstraint, wConstraint) * 0.95; // a 5% allowance
+
+    // position the origin
+    var sidePad = Math.max(0, (cW - (opts.isoScale * xyBlocks)) / 2);
+    opts.isoOriginX = sidePad * 1.05 + ((cW - sidePad - sidePad) * bY / (bX + bY));
+    opts.isoOriginY = cH - (this.w2bZDelta(0 - opts.minHeight) * opts.isoScale * 1.05); // 5% allowance again
+
+    // rebuild the layers
+    this._layers = this.makeLayers();
+    this.render();
 }
 // -----------------------------------------------------------------
 // init our squares
@@ -87,21 +103,26 @@ BaseWorld.prototype.getColor = function(type) {
 }
 // -----------------------------------------------------------------
 // init the three layers
-BaseWorld.prototype.makeLayers = function(domElement) {
-    // first, handle the dom thing we have.
+BaseWorld.prototype.resolveDom = function(domElement) {
     if (domElement instanceof Element) {
-        this._dom = domElement;
+        return domElement;
     } else {
         //maybe it's a string, which we'll assume is an id
-        this._dom = document.getElementById(domElement);
+        return document.getElementById(domElement);
     }
-
+}
+// -----------------------------------------------------------------
+// init the three layers
+BaseWorld.prototype.makeLayers = function() {
+    var opts = this._opts;
     var w = this._dom.clientWidth;
     var h = this._dom.clientHeight;
     var isoOpts = {
-        scale: this._opts.isoScale,
-        angle: this._opts.isoAngle
+        scale: opts.isoScale,
+        angle: opts.isoAngle
     }
+    if (opts.isoOriginX) isoOpts['originX'] = opts.isoOriginX;
+    if (opts.isoOriginY) isoOpts['originY'] = opts.isoOriginY;
 
     this._dom.innerHTML = '' +
         '<style>.isoworld { position: absolute; top: 0, bottom: 0, left: 0, right: 0 }</style>' +
@@ -195,11 +216,17 @@ BaseWorld.prototype.ground = function(x, y, stack) {
     var blockCoords = this.w2b(x, y, 0);
     var bX = blockCoords[0];
     var bY = blockCoords[1];
-    var bZ = this._squares[bX][bY].z;
 
-    var groundStack = this.listToStack(stack, bX, bY);
-    this.setGroundStack(bX, bY, groundStack);
-    this.renderMaybe();
+    if (this.validatePosition(bX, bY)) {
+
+        var bZ = this._squares[bX][bY].z;
+
+        var groundStack = this.listToStack(stack, bX, bY);
+        this.setGroundStack(bX, bY, groundStack);
+        this.renderMaybe();
+    } else {
+        console.log('IsoWorld: cannot set out-of-range ground stack at (' + x + ', ' + y + '), ignoring.');
+    }
 }
 // -----------------------------------------------------------------
 // turn an array of type/depth e.g. ['water', 2, sand', 1, 'soil']
@@ -229,7 +256,7 @@ BaseWorld.prototype.listToStack = function(list, bX, bY) {
     return stack;
 }
 // -----------------------------------------------------------------
-// make sure a square exists at x,y.  Grow the world as necessary
+// make sure a square exists at x,y
 BaseWorld.prototype.validatePosition = function(x, y) {
     var sq = this._squares;
     return (!(x < 0 || y < 0 || x >= sq.length || y >= sq[0].length));
