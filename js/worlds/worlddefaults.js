@@ -2,9 +2,8 @@
 var Color = require('../../bower_components/isomer/index.js').Color;
 
 var defaultOptions = {
-
-    autoRender:  true,
-    autoSize:   false,
+    autoRender:  true,    // re-draw the world when anything changes
+    autoSize:    true,    // work out block size to fill the canvas
 
     worldSizeX:    10,    // size of world
     worldSizeY:    10,    // size of world
@@ -38,11 +37,10 @@ var defaultOptions = {
     //                   '-_  |  _-'   isoAngle
     //                      '-_-' __________________
     //
-    isoScale: 60,       // pixel length of a 1x1x1 block.  Isomer default is 70
-    isoAngle: Math.PI/7,  // Math.PI/4 ~ Math.PI/15.  Isomer default is Math.PI/6
-
-    // isoOriginX: 450, // OPTIONAL in pixels, where point 0,0,0 is on the canvas
-    // isoOriginY: 450, // OPTIONAL in pixels, where point 0,0,0 is on the canvas
+    isoScale: 60,        // pixel length of a 1x1x1 block.  Isomer default is 70
+    isoAngle: Math.PI/7, // Math.PI/4 ~ Math.PI/15.  Isomer default is Math.PI/6
+    // isoOriginX: 450,  // OPTIONAL in pixels, where point 0,0,0 is on the canvas
+    // isoOriginY: 450,  // OPTIONAL in pixels, where point 0,0,0 is on the canvas
 
     dummy: "has no trailing comma"
 }
