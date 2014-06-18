@@ -164,6 +164,11 @@ BaseWorld.prototype.w2bZDelta = function(height) {
     return (height / this._opts.blockSize * this._opts.worldScaleZ);
 }
 // -----------------------------------------------------------------
+// convert world horizontal delta (x or y) to block x or y delta
+BaseWorld.prototype.w2bDelta = function(length) {
+    return length / this._opts.blockSize;
+}
+// -----------------------------------------------------------------
 // convert world coordinates to block coordinates
 // pass in either three args (x, y, z) or one ([x, y, z])
 BaseWorld.prototype.w2b = function(worldX, worldY, altitude) {
@@ -280,12 +285,42 @@ BaseWorld.prototype.setGroundStack = function(x, y, stack) {
 // -----------------------------------------------------------------
 // render a square
 BaseWorld.prototype.renderSquare = function(x, y) {
+    this.renderSquareGround(x, y);
+    this.renderSquareFeatures(x, y);
+}
+// -----------------------------------------------------------------
+// render a square
+BaseWorld.prototype.renderSquareFeatures = function(x, y) {
+
+    var sq = this._squares[x][y];
+
+    if (sq !== undefined) {
+        var f, feature;
+        if (sq.features && sq.features.length > 0) {
+            // there's features to render.
+            // we draw features along the line from left corner
+            // to right corner.  So we need to find points for
+            // all the features along that line.
+            // The +3 is +1 for the fencepost error, and +2 more to
+            // add one feature's worth of padding at each end
+            var increment = 1 / (sq.features.length + 3);
+            var step = increment;
+            for (var f=0; f < sq.features.length; f++) {
+                feature = sq.features[f];
+                step += increment;
+                feature.render(this._layers.fg, [x + step, y + 1 - step, sq.z], this._opts);
+            }
+        }
+    }
+}
+// -----------------------------------------------------------------
+// render a square's ground column
+BaseWorld.prototype.renderSquareGround = function(x, y) {
 
     var sq = this._squares[x][y];
     var bedrockZ;
 
     if (sq !== undefined) {
-
         // is there a ground column?
         var g, groundLayer;
         if (sq.ground && sq.ground.length > 0) {
@@ -303,15 +338,6 @@ BaseWorld.prototype.renderSquare = function(x, y) {
                 this.getColor('blank')
             );
             groundLayer.render(this._layers.fg, this._opts);
-        }
-
-        // now do features..
-        var f, feature;
-        if (sq.features && sq.features.length > 0) {
-            for (var f=0; f < sq.features.length; f++) {
-                feature = sq.features[f];
-                feature.render(this._layers.fg, [x + 0.5, y + 0.5, sq.z], this._opts);
-            }
         }
     }
 }

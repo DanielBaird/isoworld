@@ -37,10 +37,22 @@ var defaultOptions = {
     //                   '-_  |  _-'   isoAngle
     //                      '-_-' __________________
     //
-    isoScale: 60,        // pixel length of a 1x1x1 block.  Isomer default is 70
-    isoAngle: Math.PI/7, // Math.PI/4 ~ Math.PI/15.  Isomer default is Math.PI/6
-    // isoOriginX: 450,  // OPTIONAL in pixels, where point 0,0,0 is on the canvas
-    // isoOriginY: 450,  // OPTIONAL in pixels, where point 0,0,0 is on the canvas
+
+    // pixel length of a 1x1x1 block.  The Isomer default is 70.
+    // It's this value that gets adjusted when autoSize = true, so
+    // normally you won't need to set it yourself.
+    isoScale: 60,
+
+    // PI/15 looks quite side-on; PI/4 is more top-down. The Isomer
+    // default is PI/6.  If your drawing area's aspect ratio is
+    // unusual you can tweak this to fill the area better.
+    isoAngle: Math.PI/6,
+
+    // these isoOrigin values are optional.  If you use autoSize and
+    // set maxHeight / minHeight properly you won't need to set the
+    // isoOrigin.
+    // isoOriginX: 450,  // pixel pos of point 0,0,0 on the canvas
+    // isoOriginY: 450,  // pixel pos of point 0,0,0 on the canvas
 
     dummy: "has no trailing comma"
 }
@@ -53,6 +65,7 @@ var colorSchemes = {
         'leaflitter': new Color(90, 110, 50),
         'water': new Color(50, 200, 255, 0.75),
         'wood': new Color(90, 50, 20, 0.66),
+        'foliage': new Color(90, 200, 50, 0.66),
         'highlight': new Color(255, 255, 100, 0.1)
     },
     'real': {
@@ -62,6 +75,7 @@ var colorSchemes = {
         'leaflitter': new Color(50, 60, 40),
         'water': new Color(50, 150, 255, 0.75),
         'wood': new Color(50, 40, 30, 0.66),
+        'foliage': new Color(90, 200, 50, 0.66),
         'highlight': new Color(255, 255, 100, 0.1)
     }
 }

@@ -3,7 +3,7 @@
  *
  * Copyright 2014 Daniel Baird
  *
- * Date: 2014-06-17
+ * Date: 2014-06-18
  */
 !function(e){if("object"==typeof exports)module.exports=e();else if("function"==typeof define&&define.amd)define(e);else{var o;"undefined"!=typeof window?o=window:"undefined"!=typeof global?o=global:"undefined"!=typeof self&&(o=self),o.isoworld=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 /**
@@ -804,7 +804,7 @@ module.exports = Vector;
 
 module.exports = _dereq_('./worlds/allworlds.js');
 
-},{"./worlds/allworlds.js":14}],10:[function(_dereq_,module,exports){
+},{"./worlds/allworlds.js":15}],10:[function(_dereq_,module,exports){
 
 var Isomer = _dereq_('../../bower_components/isomer/index.js');
 var Point = Isomer.Point;
@@ -878,8 +878,54 @@ module.exports = Feature;
 
 },{"../../bower_components/isomer/index.js":1}],12:[function(_dereq_,module,exports){
 
+var Feature = _dereq_('./feature');
+var Isomer = _dereq_('../../bower_components/isomer');
+var Point = Isomer.Point;
+var Pyramid = Isomer.Shape.Pyramid;
+// -----------------------------------------------------------------
+var trunkHeightRatio = 4/5;
+var foliageWidthRatio = 1.5;
+var foliageHeightRatio = 4/5;
+var foliageStartRatio = 1/5;
+// -----------------------------------------------------------------
+function Tree(width, height, trunkColor, leafColor) {
+    Feature.call(this, width, trunkColor);
+    this.h = height;
+    this.cLeaf = leafColor;
+}
+// -----------------------------------------------------------------
+// inheritance
+Tree.prototype = Object.create(Feature.prototype);
+Tree.prototype.constructor = Tree;
+// -----------------------------------------------------------------
+Tree.prototype.render = function(iso, center, opts) {
+    var negRadius = 0 - (this.w/2);
+    var centre = new Point( center[0], center[1], center[2] );
+    var treePt = centre.translate(negRadius, negRadius, 0);
+    var foliagePt = centre.translate(
+        negRadius * foliageWidthRatio,
+        negRadius * foliageWidthRatio,
+        this.h * foliageStartRatio
+    );
+    iso.add(
+        new Pyramid(treePt, this.w, this.w, this.h * trunkHeightRatio),
+        this.c
+    );
+    iso.add(
+        new Pyramid(foliagePt, this.w * foliageWidthRatio, this.w * foliageWidthRatio, this.h * foliageHeightRatio),
+        this.cLeaf
+    );
+    // chuck on a couple of leaf sections
 
-var Block = _dereq_('./block.js');
+
+}
+// -----------------------------------------------------------------
+module.exports = Tree;
+
+},{"../../bower_components/isomer":1,"./feature":11}],13:[function(_dereq_,module,exports){
+
+
+var Block = _dereq_('./block');
 // -----------------------------------------------------------------
 function UnitColumn(centerX, centerY, bottomZ, h, color) {
     Block.call(this, centerX, centerY, bottomZ, 1, h, color);
@@ -891,7 +937,7 @@ UnitColumn.prototype.constructor = UnitColumn;
 // -----------------------------------------------------------------
 module.exports = UnitColumn;
 
-},{"./block.js":10}],13:[function(_dereq_,module,exports){
+},{"./block":10}],14:[function(_dereq_,module,exports){
 
 // shim for Object.create, from MDN
 if (typeof Object.create != 'function') {
@@ -912,7 +958,7 @@ if (typeof Object.create != 'function') {
         };
     })();
 }
-},{}],14:[function(_dereq_,module,exports){
+},{}],15:[function(_dereq_,module,exports){
 "use strict";
 
 var worldDefaults = _dereq_('./worlddefaults.js');
@@ -929,7 +975,7 @@ var World = {
 window.World = World;
 module.exports = World;
 
-},{"../../bower_components/isomer/index.js":1,"./forestworld.js":16,"./worlddefaults.js":17}],15:[function(_dereq_,module,exports){
+},{"../../bower_components/isomer/index.js":1,"./forestworld.js":17,"./worlddefaults.js":18}],16:[function(_dereq_,module,exports){
 
 _dereq_('../util/shims.js');
 
@@ -1096,6 +1142,11 @@ BaseWorld.prototype.w2bZDelta = function(height) {
     return (height / this._opts.blockSize * this._opts.worldScaleZ);
 }
 // -----------------------------------------------------------------
+// convert world horizontal delta (x or y) to block x or y delta
+BaseWorld.prototype.w2bDelta = function(length) {
+    return length / this._opts.blockSize;
+}
+// -----------------------------------------------------------------
 // convert world coordinates to block coordinates
 // pass in either three args (x, y, z) or one ([x, y, z])
 BaseWorld.prototype.w2b = function(worldX, worldY, altitude) {
@@ -1212,12 +1263,42 @@ BaseWorld.prototype.setGroundStack = function(x, y, stack) {
 // -----------------------------------------------------------------
 // render a square
 BaseWorld.prototype.renderSquare = function(x, y) {
+    this.renderSquareGround(x, y);
+    this.renderSquareFeatures(x, y);
+}
+// -----------------------------------------------------------------
+// render a square
+BaseWorld.prototype.renderSquareFeatures = function(x, y) {
+
+    var sq = this._squares[x][y];
+
+    if (sq !== undefined) {
+        var f, feature;
+        if (sq.features && sq.features.length > 0) {
+            // there's features to render.
+            // we draw features along the line from left corner
+            // to right corner.  So we need to find points for
+            // all the features along that line.
+            // The +3 is +1 for the fencepost error, and +2 more to
+            // add one feature's worth of padding at each end
+            var increment = 1 / (sq.features.length + 3);
+            var step = increment;
+            for (var f=0; f < sq.features.length; f++) {
+                feature = sq.features[f];
+                step += increment;
+                feature.render(this._layers.fg, [x + step, y + 1 - step, sq.z], this._opts);
+            }
+        }
+    }
+}
+// -----------------------------------------------------------------
+// render a square's ground column
+BaseWorld.prototype.renderSquareGround = function(x, y) {
 
     var sq = this._squares[x][y];
     var bedrockZ;
 
     if (sq !== undefined) {
-
         // is there a ground column?
         var g, groundLayer;
         if (sq.ground && sq.ground.length > 0) {
@@ -1235,15 +1316,6 @@ BaseWorld.prototype.renderSquare = function(x, y) {
                 this.getColor('blank')
             );
             groundLayer.render(this._layers.fg, this._opts);
-        }
-
-        // now do features..
-        var f, feature;
-        if (sq.features && sq.features.length > 0) {
-            for (var f=0; f < sq.features.length; f++) {
-                feature = sq.features[f];
-                feature.render(this._layers.fg, [x + 0.5, y + 0.5, sq.z], this._opts);
-            }
         }
     }
 }
@@ -1362,11 +1434,12 @@ BaseWorld.prototype._extrapolateGround = function() {
 // -----------------------------------------------------------------
 module.exports = BaseWorld;
 
-},{"../../bower_components/isomer/index.js":1,"../objects/feature.js":11,"../objects/unitcolumn.js":12,"../util/shims.js":13,"./worlddefaults.js":17}],16:[function(_dereq_,module,exports){
+},{"../../bower_components/isomer/index.js":1,"../objects/feature.js":11,"../objects/unitcolumn.js":13,"../util/shims.js":14,"./worlddefaults.js":18}],17:[function(_dereq_,module,exports){
 
-_dereq_('../util/shims.js');
+_dereq_('../util/shims');
 
-var BaseWorld = _dereq_('./baseworld.js');
+var BaseWorld = _dereq_('./baseworld');
+var Tree = _dereq_('../objects/tree');
 
 // -----------------------------------------------------------------
 // -----------------------------------------------------------------
@@ -1380,17 +1453,24 @@ ForestWorld.prototype = Object.create(BaseWorld.prototype);
 ForestWorld.prototype.constructor = ForestWorld;
 // -----------------------------------------------------------------
 // real object methods..
-// ...
+ForestWorld.prototype.tree = function(x, y, width, height) {
+    var bW = this.w2bDelta(width);
+    var bH = this.w2bZDelta(height);
+
+    var tree = new Tree(bW, bH, this.getColor('wood'), this.getColor('foliage'));
+
+    this.feature(x, y, tree);
+}
+// -----------------------------------------------------------------
 module.exports = ForestWorld;
 
-},{"../util/shims.js":13,"./baseworld.js":15}],17:[function(_dereq_,module,exports){
+},{"../objects/tree":12,"../util/shims":14,"./baseworld":16}],18:[function(_dereq_,module,exports){
 
 var Color = _dereq_('../../bower_components/isomer/index.js').Color;
 
 var defaultOptions = {
-
-    autoRender:  true,
-    autoSize:   false,
+    autoRender:  true,    // re-draw the world when anything changes
+    autoSize:    true,    // work out block size to fill the canvas
 
     worldSizeX:    10,    // size of world
     worldSizeY:    10,    // size of world
@@ -1424,11 +1504,22 @@ var defaultOptions = {
     //                   '-_  |  _-'   isoAngle
     //                      '-_-' __________________
     //
-    isoScale: 60,       // pixel length of a 1x1x1 block.  Isomer default is 70
-    isoAngle: Math.PI/7,  // Math.PI/4 ~ Math.PI/15.  Isomer default is Math.PI/6
 
-    // isoOriginX: 450, // OPTIONAL in pixels, where point 0,0,0 is on the canvas
-    // isoOriginY: 450, // OPTIONAL in pixels, where point 0,0,0 is on the canvas
+    // pixel length of a 1x1x1 block.  The Isomer default is 70.
+    // It's this value that gets adjusted when autoSize = true, so
+    // normally you won't need to set it yourself.
+    isoScale: 60,
+
+    // PI/15 looks quite side-on; PI/4 is more top-down. The Isomer
+    // default is PI/6.  If your drawing area's aspect ratio is
+    // unusual you can tweak this to fill the area better.
+    isoAngle: Math.PI/6,
+
+    // these isoOrigin values are optional.  If you use autoSize and
+    // set maxHeight / minHeight properly you won't need to set the
+    // isoOrigin.
+    // isoOriginX: 450,  // pixel pos of point 0,0,0 on the canvas
+    // isoOriginY: 450,  // pixel pos of point 0,0,0 on the canvas
 
     dummy: "has no trailing comma"
 }
@@ -1441,6 +1532,7 @@ var colorSchemes = {
         'leaflitter': new Color(90, 110, 50),
         'water': new Color(50, 200, 255, 0.75),
         'wood': new Color(90, 50, 20, 0.66),
+        'foliage': new Color(90, 200, 50, 0.66),
         'highlight': new Color(255, 255, 100, 0.1)
     },
     'real': {
@@ -1450,6 +1542,7 @@ var colorSchemes = {
         'leaflitter': new Color(50, 60, 40),
         'water': new Color(50, 150, 255, 0.75),
         'wood': new Color(50, 40, 30, 0.66),
+        'foliage': new Color(90, 200, 50, 0.66),
         'highlight': new Color(255, 255, 100, 0.1)
     }
 }

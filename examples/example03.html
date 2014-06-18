@@ -22,15 +22,13 @@
 <script>
 
     var wX = 100;
-    var wY = 100;
-    var blockSize = 8;
+    var wY = 90;
+    var blockSize = 10;
 
     var f = new World.Forest('theDiv', {
-        autoSize: true,
         worldSizeX: wX,
         worldSizeY: wY,
-        blockSize: blockSize,
-        isoAngle: Math.PI/5
+        blockSize: blockSize
     });
 
     f.autoRender(false);
@@ -42,21 +40,28 @@
         }
     }
 
-    f.groundLevel(wX - 1, wY - 1, 5);
+    f.groundLevel(wX-1, wY-1, 5);
 
     // set some ground stacks..
-    f.ground(       0,  wY * 0.1, ['water', 0.5, 'sand', 2, 'soil']);
-    f.ground(wX * 0.8,  wY * 0.3, ['soil']);
-    f.ground(wX * 0.5,  wY * 0.7, ['sand', 2, 'leaflitter', 3, 'soil']);
-    f.ground(       0,    wY - 1, ['leaflitter']);
+    f.ground(     0, wY*0.1, ['water', 0.5, 'sand', 2, 'soil']);
+    f.ground(wX*0.8, wY*0.3, ['soil']);
+    f.ground(wX*0.5, wY*0.7, ['sand', 2, 'leaflitter', 3, 'soil']);
+    f.ground(     0,   wY-1, ['leaflitter']);
 
     // add some features..
-    f.feature(       0,  wY * 0.1);
-    f.feature(wX * 0.8,  wY * 0.3);
-    f.feature(wX * 0.5,  wY * 0.7);
-    f.feature(       0,    wY - 1);
+    f.feature(     0, wY*0.1);
+    f.feature(wX*0.8, wY*0.3);
+    f.feature(wX*0.5, wY*0.7);
+    f.feature(     0,   wY-1);
 
     // f.feature(wX/2, wY/2);
+
+    // tree: x, y, diameter, height
+    f.tree(10, 10, 1, 15);
+    f.tree(20, 30, 0.75, 13);
+    f.tree(20, 30, 0.2, 5);
+    f.tree(20, 30, 1, 20);
+    f.tree(10, 40, 2, 40);
 
     f.render();
 </script>
