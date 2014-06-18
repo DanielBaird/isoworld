@@ -5,6 +5,7 @@ var defaults = require('./worlddefaults.js');
 var defaultOptions = defaults.options;
 var colorSchemes = defaults.colorSchemes;
 var Isomer = require('../../bower_components/isomer/index.js');
+var Point = Isomer.Point;
 
 var UnitColumn = require('../objects/unitcolumn.js');
 var Feature = require('../objects/feature.js');
@@ -48,7 +49,7 @@ BaseWorld.prototype.autoSize = function() {
     var bY = this._squares[0].length;
 
     var extraHeight = opts.maxHeight - opts.minHeight;
-    var xyBlocks = bX + bY + (2 * this.w2bZDelta(extraHeight));
+    var xyBlocks = bX + bY + (2 * this.w2bZDelta(extraHeight) + 0.33); // the 0.33 is the UI grid height above maxHeight
 
     // the display is x+y block-diagonals across, and x+y diagonals tall
     var bW = xyBlocks * Math.cos(opts.isoAngle);
@@ -130,11 +131,13 @@ BaseWorld.prototype.makeLayers = function() {
         '<canvas id="isoworld-fg" class="isoworld" width="' + w + '" height="' + h + '"></canvas>' +
         '<canvas id="isoworld-ui" class="isoworld" width="' + w + '" height="' + h + '"></canvas>';
 
-    return ({
-        bg: new Isomer(document.getElementById('isoworld-bg'), isoOpts),
-        fg: new Isomer(document.getElementById('isoworld-fg'), isoOpts),
-        ui: new Isomer(document.getElementById('isoworld-ui'), isoOpts)
-    });
+    var bg = new Isomer(document.getElementById('isoworld-bg'), isoOpts);
+    var fg = new Isomer(document.getElementById('isoworld-fg'), isoOpts);
+
+    isoOpts['lightPosition'] = new Isomer.Vector(-1,-1,10);
+    var ui = new Isomer(document.getElementById('isoworld-ui'), isoOpts);
+
+    return { bg: bg, fg: fg, ui: ui };
 }
 // -----------------------------------------------------------------
 // merge new options into our options
@@ -193,12 +196,14 @@ BaseWorld.prototype.feature = function(x, y, feature) {
     var blockCoords = this.w2b(x, y, 0);
     var bX = blockCoords[0];
     var bY = blockCoords[1];
-
     if (!feature) {
-        feature = new Feature(0.5);
+        feature = new Feature(0.1);
     }
-
     this._squares[bX][bY].features.push(feature);
+    // sort the features, widest first
+    this._squares[bX][bY].features.sort( function(a, b) {
+        return (b.width() - a.width());
+    });
     this.renderMaybe();
 }
 // -----------------------------------------------------------------
@@ -295,20 +300,21 @@ BaseWorld.prototype.renderSquareFeatures = function(x, y) {
     var sq = this._squares[x][y];
 
     if (sq !== undefined) {
-        var f, feature;
         if (sq.features && sq.features.length > 0) {
             // there's features to render.
             // we draw features along the line from left corner
             // to right corner.  So we need to find points for
             // all the features along that line.
-            // The +3 is +1 for the fencepost error, and +2 more to
-            // add one feature's worth of padding at each end
-            var increment = 1 / (sq.features.length + 3);
-            var step = increment;
-            for (var f=0; f < sq.features.length; f++) {
+            // The +2 is +1 for the fencepost error, and +1 more to
+            // add half a feature's worth of padding at each end
+            var f, feature;
+            var gap = this._opts.isoGap;
+            var increment = (1 - gap) / (sq.features.length + 2);
+            var step = increment/2;
+            for (f=0; f < sq.features.length; f++) {
                 feature = sq.features[f];
                 step += increment;
-                feature.render(this._layers.fg, [x + step, y + 1 - step, sq.z], this._opts);
+                feature.render(this._layers.fg, [x + step, y + 1 - gap - step, sq.z], this._opts);
             }
         }
     }
@@ -342,12 +348,38 @@ BaseWorld.prototype.renderSquareGround = function(x, y) {
     }
 }
 // -----------------------------------------------------------------
-// render
-BaseWorld.prototype.render = function() {
+// render the UI layer
+BaseWorld.prototype.renderUI = function() {
 
-    for (var layerName in this._layers) {
-        this._layers[layerName].canvas.clear();
+    var iso = this._layers.ui;
+    iso.canvas.clear();
+
+    var maxX = this._squares.length;
+    var maxY = this._squares[0].length;
+    var gX, gY;
+    var gH = this.w2bZ(this._opts.maxHeight) + 0.33;
+
+    // draw the grid
+    for (gX = 0; gX <= maxX; gX++) {
+        iso.add(new Isomer.Path(
+            new Point(gX-0.01, 0, gH),
+            new Point(gX+0.01, 0, gH),
+            new Point(gX,   maxY, gH)
+        ), this.getColor('ui'));
     }
+    for (gY = 0; gY <= maxY; gY++) {
+        iso.add(new Isomer.Path(
+            new Point(0, gY-0.01, gH),
+            new Point(0, gY+0.01, gH),
+            new Point(maxX,   gY, gH)
+        ), this.getColor('ui'));
+    }
+}
+// -----------------------------------------------------------------
+// render the foreground layer
+BaseWorld.prototype.renderFG = function() {
+
+    this._layers.fg.canvas.clear();
 
     var g = this._squares;
 
@@ -380,6 +412,12 @@ BaseWorld.prototype.render = function() {
             new Isomer.Point(-0.01,-0.01,0), new Isomer.Point(0.01,0.01,0), new Isomer.Point(0,0,10)
         ]), new Isomer.Color(255,0,0));
     }
+}
+// -----------------------------------------------------------------
+// render
+BaseWorld.prototype.render = function() {
+    this.renderFG();
+    this.renderUI();
 }
 // -----------------------------------------------------------------
 // render, only if we're supoosed to re-render automatically

@@ -17,7 +17,7 @@ var defaultOptions = {
     colorScheme: 'bright',
     maxHeight:      5,    // max height of interesting features (used to auto-size)
     minHeight:     -8,    // minimum height of interesting features (used to auto-size)
-    bedrockLevel:  -8,    // how far down to stop drawing the ground
+    bedrockLevel: -16,    // how far down to stop drawing the ground
 
     blockSize:      1,    // how many 'world' units long is one side of a block?
     isoGap:         0.05, // gap to leave between blocks
@@ -64,9 +64,10 @@ var colorSchemes = {
         'sand': new Color(230, 200, 20),
         'leaflitter': new Color(90, 110, 50),
         'water': new Color(50, 200, 255, 0.75),
-        'wood': new Color(90, 50, 20, 0.66),
-        'foliage': new Color(90, 200, 50, 0.66),
-        'highlight': new Color(255, 255, 100, 0.1)
+        'wood': new Color(90, 50, 20, 0.5),
+        'foliage': new Color(90, 200, 50, 0.75),
+        'ui': new Color(255, 255, 0, 0.33),
+        'highlight': new Color(255, 255, 100, 0.66)
     },
     'real': {
         'blank': new Color(125,125,125),
@@ -76,7 +77,8 @@ var colorSchemes = {
         'water': new Color(50, 150, 255, 0.75),
         'wood': new Color(50, 40, 30, 0.66),
         'foliage': new Color(90, 200, 50, 0.66),
-        'highlight': new Color(255, 255, 100, 0.1)
+        'ui': new Color(255, 255, 100, 0.33),
+        'highlight': new Color(255, 255, 100, 0.66)
     }
 }
 

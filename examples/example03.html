@@ -28,7 +28,10 @@
     var f = new World.Forest('theDiv', {
         worldSizeX: wX,
         worldSizeY: wY,
-        blockSize: blockSize
+        maxHeight: 40,
+        blockSize: blockSize,
+
+        worldScaleZ: 0.5
     });
 
     f.autoRender(false);
@@ -48,20 +51,31 @@
     f.ground(wX*0.5, wY*0.7, ['sand', 2, 'leaflitter', 3, 'soil']);
     f.ground(     0,   wY-1, ['leaflitter']);
 
-    // add some features..
-    f.feature(     0, wY*0.1);
-    f.feature(wX*0.8, wY*0.3);
-    f.feature(wX*0.5, wY*0.7);
-    f.feature(     0,   wY-1);
+    // // add some features..
+    // f.feature(     0, wY*0.1);
+    // f.feature(wX*0.8, wY*0.3);
+    // f.feature(wX*0.5, wY*0.7);
+    // f.feature(     0,   wY-1);
 
     // f.feature(wX/2, wY/2);
 
-    // tree: x, y, diameter, height
-    f.tree(10, 10, 1, 15);
-    f.tree(20, 30, 0.75, 13);
-    f.tree(20, 30, 0.2, 5);
-    f.tree(20, 30, 1, 20);
-    f.tree(10, 40, 2, 40);
+    // random trees
+    for (var t = 0; t < 150; t++) {
+        var diam = Math.random() + Math.random() + Math.random();
+        f.tree(
+            Math.random() * wX,
+            Math.random() * wY,
+            diam,
+            Math.random() * 4 + diam * 12
+        );
+    }
+
+    // // tree: x, y, diameter, height
+    // f.tree(10, 10, 1, 15);
+    // f.tree(20, 30, 0.75, 13);
+    // f.tree(20, 30, 0.2, 5);
+    // f.tree(20, 30, 1, 20);
+    // f.tree(10, 40, 2, 40);
 
     f.render();
 </script>

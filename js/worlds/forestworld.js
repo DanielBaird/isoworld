@@ -19,10 +19,10 @@ ForestWorld.prototype.constructor = ForestWorld;
 ForestWorld.prototype.tree = function(x, y, width, height) {
     var bW = this.w2bDelta(width);
     var bH = this.w2bZDelta(height);
-
-    var tree = new Tree(bW, bH, this.getColor('wood'), this.getColor('foliage'));
-
-    this.feature(x, y, tree);
+    this.feature(
+        x, y,
+        new Tree(bW, bH, this.getColor('wood'), this.getColor('foliage'))
+    );
 }
 // -----------------------------------------------------------------
 module.exports = ForestWorld;

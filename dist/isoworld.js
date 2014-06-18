@@ -882,16 +882,24 @@ var Feature = _dereq_('./feature');
 var Isomer = _dereq_('../../bower_components/isomer');
 var Point = Isomer.Point;
 var Pyramid = Isomer.Shape.Pyramid;
-// -----------------------------------------------------------------
-var trunkHeightRatio = 4/5;
-var foliageWidthRatio = 1.5;
-var foliageHeightRatio = 4/5;
-var foliageStartRatio = 1/5;
+var Cylinder = Isomer.Shape.Cylinder;
+
+
+// TODO this is debugging
+var defaultType;
+var pick = Math.random();
+     if (pick < 0.25) { defaultType = 'pointy'; }
+else if (pick < 0.50) { defaultType = 'tubular'; }
+else if (pick < 1.00) { defaultType = 'combination'; }
+
 // -----------------------------------------------------------------
 function Tree(width, height, trunkColor, leafColor) {
     Feature.call(this, width, trunkColor);
     this.h = height;
     this.cLeaf = leafColor;
+
+    // TODO remove this debug thing
+    this.type = defaultType;
 }
 // -----------------------------------------------------------------
 // inheritance
@@ -899,24 +907,83 @@ Tree.prototype = Object.create(Feature.prototype);
 Tree.prototype.constructor = Tree;
 // -----------------------------------------------------------------
 Tree.prototype.render = function(iso, center, opts) {
-    var negRadius = 0 - (this.w/2);
-    var centre = new Point( center[0], center[1], center[2] );
-    var treePt = centre.translate(negRadius, negRadius, 0);
-    var foliagePt = centre.translate(
-        negRadius * foliageWidthRatio,
-        negRadius * foliageWidthRatio,
-        this.h * foliageStartRatio
-    );
-    iso.add(
-        new Pyramid(treePt, this.w, this.w, this.h * trunkHeightRatio),
-        this.c
-    );
-    iso.add(
-        new Pyramid(foliagePt, this.w * foliageWidthRatio, this.w * foliageWidthRatio, this.h * foliageHeightRatio),
-        this.cLeaf
-    );
-    // chuck on a couple of leaf sections
 
+    if (this.type == 'pointy') {
+
+        var trunkHeightRatio = 4/5;
+        var foliageWidthRatio = 1.5;
+        var foliageHeightRatio = 4/5;
+        var foliageStartRatio = 1/5;
+
+        var offset = 0 - (this.w/1.41);
+        var centre = new Point( center[0], center[1], center[2] );
+        var treePt = centre.translate(offset, offset, 0);
+        var foliagePt = centre.translate(
+            offset * foliageWidthRatio,
+            offset * foliageWidthRatio,
+            this.h * foliageStartRatio
+        );
+        // draw the trunk
+        iso.add(
+            new Pyramid(treePt, this.w, this.w, this.h * trunkHeightRatio),
+            this.c
+        );
+        // draw the foliage
+        iso.add(
+            new Pyramid(foliagePt, this.w * foliageWidthRatio, this.w * foliageWidthRatio, this.h * foliageHeightRatio),
+            this.cLeaf
+        );
+    }
+
+    if (this.type == 'tubular') {
+
+        var trunkHeightRatio = 1/3;
+        var foliageWidthRatio = 1.5;
+        var foliageHeightRatio = 2/3;
+        var foliageStartRatio = 1/3;
+
+        var offset = 0 - (this.w/2);
+        var trunkOrigin = new Point( center[0], center[1], center[2] );
+        var leafOrigin = trunkOrigin.translate(0, 0, this.h * foliageStartRatio);
+        // draw the trunk
+        iso.add(
+            new Cylinder(trunkOrigin, this.w / 2, 10, this.h * trunkHeightRatio),
+            this.c
+        );
+        // draw the foliage
+        iso.add(
+            new Cylinder(leafOrigin, this.w * foliageWidthRatio / 2, 10, this.h * foliageHeightRatio),
+            this.cLeaf
+        );
+    }
+
+    if (this.type == 'combination') {
+
+        var trunkHeightRatio = 1/5;
+        var foliageWidthRatio = 1.1;
+        var foliageHeightRatio = 4/5;
+        var foliageStartRatio = 1/5;
+
+        var offset = 0 - (this.w/2);
+        var trunkOrigin = new Point( center[0], center[1], center[2] );
+        var leafOrigin = trunkOrigin.translate(0, 0, this.h * foliageStartRatio);
+        var foliageOrigin = trunkOrigin.translate(
+            offset * foliageWidthRatio,
+            offset * foliageWidthRatio,
+            this.h * foliageStartRatio
+        );
+
+        // draw the trunk
+        iso.add(
+            new Cylinder(trunkOrigin, this.w / 2, 10, this.h * trunkHeightRatio),
+            this.c
+        );
+        // draw the foliage
+        iso.add(
+            new Pyramid(foliageOrigin, this.w * foliageWidthRatio, this.w * foliageWidthRatio, this.h * foliageHeightRatio),
+            this.cLeaf
+        );
+    }
 
 }
 // -----------------------------------------------------------------
@@ -983,6 +1050,7 @@ var defaults = _dereq_('./worlddefaults.js');
 var defaultOptions = defaults.options;
 var colorSchemes = defaults.colorSchemes;
 var Isomer = _dereq_('../../bower_components/isomer/index.js');
+var Point = Isomer.Point;
 
 var UnitColumn = _dereq_('../objects/unitcolumn.js');
 var Feature = _dereq_('../objects/feature.js');
@@ -1026,7 +1094,7 @@ BaseWorld.prototype.autoSize = function() {
     var bY = this._squares[0].length;
 
     var extraHeight = opts.maxHeight - opts.minHeight;
-    var xyBlocks = bX + bY + (2 * this.w2bZDelta(extraHeight));
+    var xyBlocks = bX + bY + (2 * this.w2bZDelta(extraHeight) + 0.33); // the 0.33 is the UI grid height above maxHeight
 
     // the display is x+y block-diagonals across, and x+y diagonals tall
     var bW = xyBlocks * Math.cos(opts.isoAngle);
@@ -1108,11 +1176,13 @@ BaseWorld.prototype.makeLayers = function() {
         '<canvas id="isoworld-fg" class="isoworld" width="' + w + '" height="' + h + '"></canvas>' +
         '<canvas id="isoworld-ui" class="isoworld" width="' + w + '" height="' + h + '"></canvas>';
 
-    return ({
-        bg: new Isomer(document.getElementById('isoworld-bg'), isoOpts),
-        fg: new Isomer(document.getElementById('isoworld-fg'), isoOpts),
-        ui: new Isomer(document.getElementById('isoworld-ui'), isoOpts)
-    });
+    var bg = new Isomer(document.getElementById('isoworld-bg'), isoOpts);
+    var fg = new Isomer(document.getElementById('isoworld-fg'), isoOpts);
+
+    isoOpts['lightPosition'] = new Isomer.Vector(-1,-1,10);
+    var ui = new Isomer(document.getElementById('isoworld-ui'), isoOpts);
+
+    return { bg: bg, fg: fg, ui: ui };
 }
 // -----------------------------------------------------------------
 // merge new options into our options
@@ -1171,12 +1241,14 @@ BaseWorld.prototype.feature = function(x, y, feature) {
     var blockCoords = this.w2b(x, y, 0);
     var bX = blockCoords[0];
     var bY = blockCoords[1];
-
     if (!feature) {
-        feature = new Feature(0.5);
+        feature = new Feature(0.1);
     }
-
     this._squares[bX][bY].features.push(feature);
+    // sort the features, widest first
+    this._squares[bX][bY].features.sort( function(a, b) {
+        return (b.width() - a.width());
+    });
     this.renderMaybe();
 }
 // -----------------------------------------------------------------
@@ -1273,20 +1345,21 @@ BaseWorld.prototype.renderSquareFeatures = function(x, y) {
     var sq = this._squares[x][y];
 
     if (sq !== undefined) {
-        var f, feature;
         if (sq.features && sq.features.length > 0) {
             // there's features to render.
             // we draw features along the line from left corner
             // to right corner.  So we need to find points for
             // all the features along that line.
-            // The +3 is +1 for the fencepost error, and +2 more to
-            // add one feature's worth of padding at each end
-            var increment = 1 / (sq.features.length + 3);
-            var step = increment;
-            for (var f=0; f < sq.features.length; f++) {
+            // The +2 is +1 for the fencepost error, and +1 more to
+            // add half a feature's worth of padding at each end
+            var f, feature;
+            var gap = this._opts.isoGap;
+            var increment = (1 - gap) / (sq.features.length + 2);
+            var step = increment/2;
+            for (f=0; f < sq.features.length; f++) {
                 feature = sq.features[f];
                 step += increment;
-                feature.render(this._layers.fg, [x + step, y + 1 - step, sq.z], this._opts);
+                feature.render(this._layers.fg, [x + step, y + 1 - gap - step, sq.z], this._opts);
             }
         }
     }
@@ -1320,12 +1393,38 @@ BaseWorld.prototype.renderSquareGround = function(x, y) {
     }
 }
 // -----------------------------------------------------------------
-// render
-BaseWorld.prototype.render = function() {
+// render the UI layer
+BaseWorld.prototype.renderUI = function() {
 
-    for (var layerName in this._layers) {
-        this._layers[layerName].canvas.clear();
+    var iso = this._layers.ui;
+    iso.canvas.clear();
+
+    var maxX = this._squares.length;
+    var maxY = this._squares[0].length;
+    var gX, gY;
+    var gH = this.w2bZ(this._opts.maxHeight) + 0.33;
+
+    // draw the grid
+    for (gX = 0; gX <= maxX; gX++) {
+        iso.add(new Isomer.Path(
+            new Point(gX-0.01, 0, gH),
+            new Point(gX+0.01, 0, gH),
+            new Point(gX,   maxY, gH)
+        ), this.getColor('ui'));
     }
+    for (gY = 0; gY <= maxY; gY++) {
+        iso.add(new Isomer.Path(
+            new Point(0, gY-0.01, gH),
+            new Point(0, gY+0.01, gH),
+            new Point(maxX,   gY, gH)
+        ), this.getColor('ui'));
+    }
+}
+// -----------------------------------------------------------------
+// render the foreground layer
+BaseWorld.prototype.renderFG = function() {
+
+    this._layers.fg.canvas.clear();
 
     var g = this._squares;
 
@@ -1358,6 +1457,12 @@ BaseWorld.prototype.render = function() {
             new Isomer.Point(-0.01,-0.01,0), new Isomer.Point(0.01,0.01,0), new Isomer.Point(0,0,10)
         ]), new Isomer.Color(255,0,0));
     }
+}
+// -----------------------------------------------------------------
+// render
+BaseWorld.prototype.render = function() {
+    this.renderFG();
+    this.renderUI();
 }
 // -----------------------------------------------------------------
 // render, only if we're supoosed to re-render automatically
@@ -1456,10 +1561,10 @@ ForestWorld.prototype.constructor = ForestWorld;
 ForestWorld.prototype.tree = function(x, y, width, height) {
     var bW = this.w2bDelta(width);
     var bH = this.w2bZDelta(height);
-
-    var tree = new Tree(bW, bH, this.getColor('wood'), this.getColor('foliage'));
-
-    this.feature(x, y, tree);
+    this.feature(
+        x, y,
+        new Tree(bW, bH, this.getColor('wood'), this.getColor('foliage'))
+    );
 }
 // -----------------------------------------------------------------
 module.exports = ForestWorld;
@@ -1484,7 +1589,7 @@ var defaultOptions = {
     colorScheme: 'bright',
     maxHeight:      5,    // max height of interesting features (used to auto-size)
     minHeight:     -8,    // minimum height of interesting features (used to auto-size)
-    bedrockLevel:  -8,    // how far down to stop drawing the ground
+    bedrockLevel: -16,    // how far down to stop drawing the ground
 
     blockSize:      1,    // how many 'world' units long is one side of a block?
     isoGap:         0.05, // gap to leave between blocks
@@ -1531,9 +1636,10 @@ var colorSchemes = {
         'sand': new Color(230, 200, 20),
         'leaflitter': new Color(90, 110, 50),
         'water': new Color(50, 200, 255, 0.75),
-        'wood': new Color(90, 50, 20, 0.66),
-        'foliage': new Color(90, 200, 50, 0.66),
-        'highlight': new Color(255, 255, 100, 0.1)
+        'wood': new Color(90, 50, 20, 0.5),
+        'foliage': new Color(90, 200, 50, 0.75),
+        'ui': new Color(255, 255, 0, 0.33),
+        'highlight': new Color(255, 255, 100, 0.66)
     },
     'real': {
         'blank': new Color(125,125,125),
@@ -1543,7 +1649,8 @@ var colorSchemes = {
         'water': new Color(50, 150, 255, 0.75),
         'wood': new Color(50, 40, 30, 0.66),
         'foliage': new Color(90, 200, 50, 0.66),
-        'highlight': new Color(255, 255, 100, 0.1)
+        'ui': new Color(255, 255, 100, 0.33),
+        'highlight': new Color(255, 255, 100, 0.66)
     }
 }
 
