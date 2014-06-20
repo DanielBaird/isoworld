@@ -175,10 +175,7 @@ BaseWorld.prototype.w2bDelta = function(length) {
 // -----------------------------------------------------------------
 // convert world coordinates to block coordinates
 // pass in either three args (x, y, z) or one ([x, y, z])
-BaseWorld.prototype.w2b = function(worldX, worldY, altitude) {
-    var wX = worldX;
-    var wY = worldY;
-    var wZ = altitude;
+BaseWorld.prototype.w2b = function(wX, wY, wZ) {
     if (wX instanceof Array) {
         wZ = wX[2];
         wY = wX[1];
@@ -186,10 +183,14 @@ BaseWorld.prototype.w2b = function(worldX, worldY, altitude) {
     }
     var opts = this._opts;
     // okay now we have world coords for x,y,z.
-    var bX = Math.floor( (wX - opts.worldOriginX) / opts.blockSize );
-    var bY = Math.floor( (wY - opts.worldOriginY) / opts.blockSize );
+    var fX = (wX - opts.worldOriginX) / opts.blockSize;
+    var fY = (wY - opts.worldOriginY) / opts.blockSize;
+
+    var bX = Math.floor(fX);
+    var bY = Math.floor(fY);
     var bZ = (wZ - opts.worldOriginZ) / opts.blockSize * opts.worldScaleZ;
-    return ([bX, bY, bZ]);
+
+    return ([bX, bY, bZ, fX, fY]);
 }
 // -----------------------------------------------------------------
 // add a feature at world coords x,y
@@ -197,15 +198,21 @@ BaseWorld.prototype.feature = function(x, y, feature) {
     var blockCoords = this.w2b(x, y, 0);
     var bX = blockCoords[0];
     var bY = blockCoords[1];
+    var fX = blockCoords[3];
+    var fY = blockCoords[4];
+
     if (!feature) {
-        feature = new Feature(0.1);
+        feature = new Feature(fX, fY, 0.1);
     }
-    this._squares[bX][bY].features.push(feature);
-    // sort the features, widest first
-    this._squares[bX][bY].features.sort( function(a, b) {
-        return (b.width() - a.width());
-    });
-    this.renderMaybe();
+
+    if (this.validatePosition(bX,bY)) {
+        this._squares[bX][bY].features.push(feature);
+        // sort the features, widest first
+        this._squares[bX][bY].features.sort( function(a, b) {
+            return (b.width() - a.width());
+        });
+        this.renderMaybe();
+    }
 }
 // -----------------------------------------------------------------
 // set the ground level for world coords x,y.
@@ -315,7 +322,8 @@ BaseWorld.prototype.renderSquareFeatures = function(x, y) {
             for (f=0; f < sq.features.length; f++) {
                 feature = sq.features[f];
                 step += increment;
-                feature.render(this._layers.fg, [x + step, y + 1 - gap - step, sq.z], this._opts);
+                feature.renderAtZ(this._layers.fg, sq.z, this._opts);
+                // feature.renderAt(this._layers.fg, [x + step, y + 1 - gap - step, sq.z], this._opts);
             }
         }
     }
@@ -418,7 +426,7 @@ BaseWorld.prototype.renderFG = function() {
 // render
 BaseWorld.prototype.render = function() {
     this.renderFG();
-    this.renderUI();
+    // this.renderUI();
 }
 // -----------------------------------------------------------------
 // render, only if we're supoosed to re-render automatically

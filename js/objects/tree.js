@@ -11,11 +11,13 @@ var defaultType;
 var pick = Math.random();
      if (pick < 0.25) { defaultType = 'pointy'; }
 else if (pick < 0.50) { defaultType = 'tubular'; }
+else if (pick < 0.75) { defaultType = 'stump'; }
 else if (pick < 1.00) { defaultType = 'combination'; }
+// defaultType = 'stump';
 
 // -----------------------------------------------------------------
-function Tree(width, height, trunkColor, leafColor) {
-    Feature.call(this, width, trunkColor);
+function Tree(fX, fY, width, height, trunkColor, leafColor) {
+    Feature.call(this, fX, fY, width, trunkColor);
     this.h = height;
     this.cLeaf = leafColor;
 
@@ -27,7 +29,7 @@ function Tree(width, height, trunkColor, leafColor) {
 Tree.prototype = Object.create(Feature.prototype);
 Tree.prototype.constructor = Tree;
 // -----------------------------------------------------------------
-Tree.prototype.render = function(iso, center, opts) {
+Tree.prototype.renderAt = function(iso, center, opts) {
 
     if (this.type == 'pointy') {
 
@@ -75,6 +77,18 @@ Tree.prototype.render = function(iso, center, opts) {
         iso.add(
             new Cylinder(leafOrigin, this.w * foliageWidthRatio / 2, 10, this.h * foliageHeightRatio),
             this.cLeaf
+        );
+    }
+
+    if (this.type == 'stump') {
+
+        var radius = this.w;
+
+        var offset = 0 - radius;
+        var trunkOrigin = new Point( center[0], center[1], center[2] );
+        iso.add(
+            new Cylinder(trunkOrigin, radius, 33, 0.2),
+            this.c
         );
     }
 

@@ -3,8 +3,12 @@ var Isomer = require('../../bower_components/isomer/index.js');
 var Point = Isomer.Point;
 
 // -----------------------------------------------------------------
-function Feature(width, color) {
+function Feature(fX, fY, width, color) {
     this.w = width;
+
+    this.fX = fX;
+    this.fY = fY;
+
     if (color instanceof Isomer.Color) {
         this.c = color;
     } else {
@@ -19,7 +23,11 @@ Feature.prototype.width = function(width) {
     return this.w;
 }
 // -----------------------------------------------------------------
-Feature.prototype.render = function(iso, center, opts) {
+Feature.prototype.renderAtZ = function(iso, z, opts) {
+    this.renderAt(iso, [this.fX, this.fY, z], opts);
+}
+// -----------------------------------------------------------------
+Feature.prototype.renderAt = function(iso, center, opts) {
     var at = new Point( center[0], center[1], center[2] );
     iso.add(
         new Isomer.Path.Star(at, this.w/6, this.w/2, 11),

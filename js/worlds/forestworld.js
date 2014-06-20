@@ -17,11 +17,15 @@ ForestWorld.prototype.constructor = ForestWorld;
 // -----------------------------------------------------------------
 // real object methods..
 ForestWorld.prototype.tree = function(x, y, width, height) {
+
+    var pos = this.w2b([x, y, 0]);
+
     var bW = this.w2bDelta(width);
     var bH = this.w2bZDelta(height);
+
     this.feature(
-        x, y,
-        new Tree(bW, bH, this.getColor('wood'), this.getColor('foliage'))
+        pos[3], pos[4],
+        new Tree(pos[3], pos[4], bW, bH, this.getColor('wood'), this.getColor('foliage'))
     );
 }
 // -----------------------------------------------------------------
