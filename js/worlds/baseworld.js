@@ -103,7 +103,7 @@ BaseWorld.prototype.getColor = function(type) {
     return color
 }
 // -----------------------------------------------------------------
-// init the three layers
+// pick out the dom element
 BaseWorld.prototype.resolveDom = function(domElement) {
     if (domElement instanceof Element) {
         return domElement;
@@ -134,6 +134,7 @@ BaseWorld.prototype.makeLayers = function() {
     var bg = new Isomer(document.getElementById('isoworld-bg'), isoOpts);
     var fg = new Isomer(document.getElementById('isoworld-fg'), isoOpts);
 
+    isoOpts['lightPosition'] = new Isomer.Vector(-1,-1,10);
     isoOpts['lightPosition'] = new Isomer.Vector(-1,-1,10);
     var ui = new Isomer(document.getElementById('isoworld-ui'), isoOpts);
 
@@ -369,8 +370,8 @@ BaseWorld.prototype.renderUI = function() {
     }
     for (gY = 0; gY <= maxY; gY++) {
         iso.add(new Isomer.Path(
-            new Point(0, gY-0.01, gH),
             new Point(0, gY+0.01, gH),
+            new Point(0, gY-0.01, gH),
             new Point(maxX,   gY, gH)
         ), this.getColor('ui'));
     }
