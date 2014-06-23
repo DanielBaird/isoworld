@@ -24,7 +24,7 @@
     var wX = 100;
     var wY = 100;
     var wH = 40;
-    var blockSize = 6;
+    var blockSize = 10;
 
     var f = new IsoWorld.Worlds.Forest('theDiv', {
         minX:               0,
@@ -59,10 +59,10 @@
 
     // some points
     var points = [
-        new IsoWorld.Point(     0, wY*0.1, 0),
-        new IsoWorld.Point(wX*0.8, wY*0.3, 0),
-        new IsoWorld.Point(wX*0.5, wY*0.7, 0),
-        new IsoWorld.Point(     0,   wY-1, 0)
+        new IsoWorld.Point(     0, wY*0.1, wH/3),
+        new IsoWorld.Point(wX*0.8, wY*0.3, wH/3),
+        new IsoWorld.Point(wX*0.5, wY*0.7, wH/3),
+        new IsoWorld.Point(     0,   wY-1, wH/3)
     ]
 
     // set some ground stacks..
@@ -72,9 +72,9 @@
     f.ground(points[3], ['leaflitter']);
 
     // set some features..
-    f.feature(new IsoWorld.Point(     0, wY*0.1, 0));
-    f.feature(new IsoWorld.Point(wX*0.8, wY*0.3, 0));
-    f.feature(new IsoWorld.Point(wX*0.5, wY*0.7, 0));
+    f.feature(new IsoWorld.Point(     0, wY*0.11, 0));
+    f.feature(new IsoWorld.Point(wX*0.8, wY*0.33, 0));
+    f.feature(new IsoWorld.Point(wX*0.5, wY*0.77, 0));
     f.feature(new IsoWorld.Point(     0,   wY-1, 0));
 
     trees = [
