@@ -9,11 +9,11 @@ var Cylinder = Isomer.Shape.Cylinder;
 // TODO this is debugging
 var defaultType;
 var pick = Math.random();
-     if (pick < 0.25) { defaultType = 'pointy'; }
-else if (pick < 0.50) { defaultType = 'tubular'; }
-else if (pick < 0.75) { defaultType = 'stump'; }
-else if (pick < 1.00) { defaultType = 'combination'; }
-// defaultType = 'stump';
+var types = 'pointy cylindrical stump combination random'.split(' ');
+defaultType = types[Math.floor(Math.random() * types.length)];
+// override random tree type..
+// defaultType = 'cylindrical';
+defaultType = 'random';
 
 // -----------------------------------------------------------------
 function Tree(fX, fY, width, height, trunkColor, leafColor) {
@@ -31,10 +31,18 @@ Tree.prototype.constructor = Tree;
 // -----------------------------------------------------------------
 Tree.prototype.renderAt = function(iso, center, opts) {
 
-    if (this.type == 'pointy') {
+    var type = this.type;
+    if (type == 'random') {
+        var randList = [].concat(types);
+        randList.splice(types.indexOf('stump'), 1);
+        randList.splice(types.indexOf('random'), 1);
+        type = randList[Math.floor(Math.random() * randList.length)];
+    }
+
+    if (type == 'pointy') {
 
         var trunkHeightRatio = 4/5;
-        var foliageWidthRatio = 1.5;
+        var foliageWidthRatio = 2;
         var foliageHeightRatio = 4/5;
         var foliageStartRatio = 1/5;
 
@@ -58,10 +66,10 @@ Tree.prototype.renderAt = function(iso, center, opts) {
         );
     }
 
-    if (this.type == 'tubular') {
+    if (type == 'cylindrical') {
 
         var trunkHeightRatio = 1/3;
-        var foliageWidthRatio = 1.5;
+        var foliageWidthRatio = 2;
         var foliageHeightRatio = 2/3;
         var foliageStartRatio = 1/3;
 
@@ -80,7 +88,7 @@ Tree.prototype.renderAt = function(iso, center, opts) {
         );
     }
 
-    if (this.type == 'stump') {
+    if (type == 'stump') {
 
         var radius = this.w;
 
@@ -92,10 +100,10 @@ Tree.prototype.renderAt = function(iso, center, opts) {
         );
     }
 
-    if (this.type == 'combination') {
+    if (type == 'combination') {
 
         var trunkHeightRatio = 1/5;
-        var foliageWidthRatio = 1.1;
+        var foliageWidthRatio = 2;
         var foliageHeightRatio = 4/5;
         var foliageStartRatio = 1/5;
 

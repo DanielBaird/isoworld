@@ -49,7 +49,7 @@ BaseWorld.prototype.autoSize = function() {
     var bY = this._squares[0].length;
 
     var extraHeight = opts.maxHeight - opts.minHeight;
-    var xyBlocks = bX + bY + (2 * this.w2bZDelta(extraHeight) + 0.33); // the 0.33 is the UI grid height above maxHeight
+    var xyBlocks = bX + bY + (2 * this.wh2bhDelta(extraHeight) + 0.33); // the 0.33 is the UI grid height above maxHeight
 
     // the display is x+y block-diagonals across, and x+y diagonals tall
     var bW = xyBlocks * Math.cos(opts.isoAngle);
@@ -63,7 +63,7 @@ BaseWorld.prototype.autoSize = function() {
     // position the origin
     var sidePad = Math.max(0, (cW - (opts.isoScale * xyBlocks)) / 2);
     opts.isoOriginX = sidePad * 1.05 + ((cW - sidePad - sidePad) * bY / (bX + bY));
-    opts.isoOriginY = cH - (this.w2bZDelta(0 - opts.minHeight) * opts.isoScale * 1.05); // 5% allowance again
+    opts.isoOriginY = cH - (this.wh2bhDelta(0 - opts.minHeight) * opts.isoScale * 1.05); // 5% allowance again
 
     // rebuild the layers
     this._layers = this.makeLayers();
@@ -159,23 +159,66 @@ BaseWorld.prototype.autoRender = function(yesno) {
 }
 // -----------------------------------------------------------------
 // convert absolute world height to absolute block z
-BaseWorld.prototype.w2bZ = function(altitude) {
-    return (this.w2bZDelta(altitude - this._opts.worldOriginZ));
+BaseWorld.prototype.wh2bh = function(altitude) {
+    return (this.wh2bhDelta(altitude - this._opts.worldOriginZ));
 }
 // -----------------------------------------------------------------
 // convert world height delta to block z delta
-BaseWorld.prototype.w2bZDelta = function(height) {
+BaseWorld.prototype.wh2bhDelta = function(height) {
     return (height / this._opts.blockSize * this._opts.worldScaleZ);
 }
 // -----------------------------------------------------------------
 // convert world horizontal delta (x or y) to block x or y delta
-BaseWorld.prototype.w2bDelta = function(length) {
+BaseWorld.prototype.wl2bl = function(length) {
     return length / this._opts.blockSize;
 }
 // -----------------------------------------------------------------
 // convert world coordinates to block coordinates
+BaseWorld.prototype.w2b = function(wPoint) {
+    var o = this._opts;
+    return ( this.w2bDelta(
+        wPoint.translate(o.worldOriginX, o.worldOriginY, o.worldOriginZ)
+    ))
+}
+// -----------------------------------------------------------------
+// convert world distance to block distance
+BaseWorld.prototype.w2bDelta = function(wPoint) {
+    var o = this._opts;
+    return (wPoint.scale(o.isoScale, o.isoScale, o.isoScale * worldScaleZ));
+}
+// -----------------------------------------------------------------
+// get the parent block's coords for the given block-coords
+BaseWorld.prototype.blockPoint = function(bPoint) {
+    return new Point(
+        Math.floor(bPoint.x),
+        Math.floor(bPoint.y),
+        bPoint.z
+    );
+}
+// -----------------------------------------------------------------
+// get the actual parent block for the given world coords
+BaseWorld.prototype.w2block = function(wPoint) {
+    var bP = this.w2b(wPoint);
+    if (this.isRange(bP)) {
+        return this._squares[bP.x][bP.y];
+    } else {
+        console.log('isoworld: out of range (' + bPoint.x + ', ' + bPoint.y + ')');
+    }
+}
+// -----------------------------------------------------------------
+// get the actual parent block for the given block-coords
+BaseWorld.prototype.block = function(bPoint) {
+    var bP = this.blockPoint(bPoint);
+    if (this.isRange(bP)) {
+        return this._squares[bP.x][bP.y];
+    } else {
+        console.log('isoworld: out of range (' + bPoint.x + ', ' + bPoint.y + ')');
+    }
+}
+// -----------------------------------------------------------------
+// convert world coordinates to block coordinates
 // pass in either three args (x, y, z) or one ([x, y, z])
-BaseWorld.prototype.w2b = function(wX, wY, wZ) {
+BaseWorld.prototype.w2bArray = function(wX, wY, wZ) {
     if (wX instanceof Array) {
         wZ = wX[2];
         wY = wX[1];
@@ -195,33 +238,40 @@ BaseWorld.prototype.w2b = function(wX, wY, wZ) {
 // -----------------------------------------------------------------
 // add a feature at world coords x,y
 BaseWorld.prototype.feature = function(x, y, feature) {
-    var blockCoords = this.w2b(x, y, 0);
+    var blockCoords = this.w2bArray(x, y, 0);
     var bX = blockCoords[0];
     var bY = blockCoords[1];
     var fX = blockCoords[3];
     var fY = blockCoords[4];
-
+    // dodgy undifferentiated feature..
     if (!feature) {
         feature = new Feature(fX, fY, 0.1);
     }
+    this._addFeature(bX, bY, feature);
+    this.renderMaybe();
+}
+// -----------------------------------------------------------------
+// set the ground level for world coords x,y.
+BaseWorld.prototype._addFeature = function(bX, bY, feature) {
 
     if (this.validatePosition(bX,bY)) {
         this._squares[bX][bY].features.push(feature);
+
         // sort the features, widest first
         this._squares[bX][bY].features.sort( function(a, b) {
             return (b.width() - a.width());
         });
-        this.renderMaybe();
+
     }
 }
 // -----------------------------------------------------------------
 // set the ground level for world coords x,y.
 BaseWorld.prototype.groundLevel = function(x, y, altitude) {
-    var blockCoords = this.w2b(x, y, altitude);
+    var blockCoords = this.w2bArray(x, y, altitude);
     var bX = blockCoords[0];
     var bY = blockCoords[1];
     var bZ = blockCoords[2];
-    this.setGroundLevel(bX, bY, bZ);
+    this._setGroundLevel(bX, bY, bZ);
     this.renderMaybe();
 }
 // -----------------------------------------------------------------
@@ -231,7 +281,7 @@ BaseWorld.prototype.groundLevel = function(x, y, altitude) {
 // Alternatively just provide a single Color for a simple one-color column.
 BaseWorld.prototype.ground = function(x, y, stack) {
 
-    var blockCoords = this.w2b(x, y, 0);
+    var blockCoords = this.w2bArray(x, y, 0);
     var bX = blockCoords[0];
     var bY = blockCoords[1];
 
@@ -239,8 +289,8 @@ BaseWorld.prototype.ground = function(x, y, stack) {
 
         var bZ = this._squares[bX][bY].z;
 
-        var groundStack = this.listToStack(stack, bX, bY);
-        this.setGroundStack(bX, bY, groundStack);
+        var groundStack = this._listToStack(stack, bX, bY);
+        this._setGroundStack(bX, bY, groundStack);
         this.renderMaybe();
     } else {
         console.log('IsoWorld: cannot set out-of-range ground stack at (' + x + ', ' + y + '), ignoring.');
@@ -249,7 +299,7 @@ BaseWorld.prototype.ground = function(x, y, stack) {
 // -----------------------------------------------------------------
 // turn an array of type/depth e.g. ['water', 2, sand', 1, 'soil']
 // into an array of ground blocks
-BaseWorld.prototype.listToStack = function(list, bX, bY) {
+BaseWorld.prototype._listToStack = function(list, bX, bY) {
 
     var listPos, color, thickness;
     var stack = [];
@@ -261,9 +311,9 @@ BaseWorld.prototype.listToStack = function(list, bX, bY) {
 
         // list[listIndex + 1] is the thickness of the layer
         if (listIndex < list.length - 1) {
-            thickness = this.w2bZDelta( list[listIndex + 1] );
+            thickness = this.wh2bhDelta( list[listIndex + 1] );
         } else {
-            thickness = height - this.w2bZ( this._opts.bedrockLevel );
+            thickness = height - this.wh2bh( this._opts.bedrockLevel );
         }
         if (thickness > 0) {
             height -= thickness;
@@ -281,7 +331,7 @@ BaseWorld.prototype.validatePosition = function(x, y) {
 }
 // -----------------------------------------------------------------
 // set ground level for the square at BLOCK coords x,y.
-BaseWorld.prototype.setGroundLevel = function(x, y, z) {
+BaseWorld.prototype._setGroundLevel = function(x, y, z) {
     if (this.validatePosition(x, y)) {
         this._squares[x][y].z = z;
     }
@@ -289,7 +339,7 @@ BaseWorld.prototype.setGroundLevel = function(x, y, z) {
 // -----------------------------------------------------------------
 // set ground stack for the square at BLOCK coords x,y.
 // setting will set from bedrock up to altitude in specified color
-BaseWorld.prototype.setGroundStack = function(x, y, stack) {
+BaseWorld.prototype._setGroundStack = function(x, y, stack) {
     if (this.validatePosition(x, y)) {
         this._groundStacks.push({ x: x, y: y, ground: stack });
         this._extrapolateGround();
@@ -346,7 +396,7 @@ BaseWorld.prototype.renderSquareGround = function(x, y) {
             }
         } else {
             // no ground recorded, draw a blank column
-            bedrockZ = this.w2bZ(this._opts.bedrockLevel);
+            bedrockZ = this.wh2bh(this._opts.bedrockLevel);
             groundLayer = new UnitColumn(
                 x, y, bedrockZ,
                 (sq.z ? sq.z : 0) - bedrockZ,
@@ -366,7 +416,7 @@ BaseWorld.prototype.renderUI = function() {
     var maxX = this._squares.length;
     var maxY = this._squares[0].length;
     var gX, gY;
-    var gH = this.w2bZ(this._opts.maxHeight) + 0.33;
+    var gH = this.wh2bh(this._opts.maxHeight) + 0.33;
 
     // draw the grid
     for (gX = 0; gX <= maxX; gX++) {
@@ -452,7 +502,7 @@ BaseWorld.prototype._neighbours = function(x, y) {
 BaseWorld.prototype._copyGround = function(from, to) {
     var newLayer;
     var fromZ = from.z;
-    var aboveBedrock = to.z - this.w2bZ(this._opts.bedrockLevel);
+    var aboveBedrock = to.z - this.wh2bh(this._opts.bedrockLevel);
 
     if (fromZ === undefined) fromZ = 0;
     to.ground = [];

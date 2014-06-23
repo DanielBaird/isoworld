@@ -1,5 +1,6 @@
 
 var Color = require('../../bower_components/isomer/index.js').Color;
+var Point = require('../../bower_components/isomer/index.js').Point;
 
 var defaultOptions = {
     autoRender:  true,    // re-draw the world when anything changes
