@@ -3,11 +3,11 @@ var Isomer = require('../../bower_components/isomer/index.js');
 var Point = Isomer.Point;
 
 // -----------------------------------------------------------------
-function Feature(fX, fY, width, color) {
-    this.w = width;
+function Feature(bPoint, width, color, parent) {
 
-    this.fX = fX;
-    this.fY = fY;
+    this.origin = new Point(bPoint.x, bPoint.y, bPoint.z);
+    this.w = width;
+    this.parent(parent); // backreference to parent block
 
     if (color instanceof Isomer.Color) {
         this.c = color;
@@ -16,6 +16,16 @@ function Feature(fX, fY, width, color) {
     }
 }
 // -----------------------------------------------------------------
+// set or get parent block
+Feature.prototype.parent = function(parent) {
+    if (parent !== undefined) {
+        this.p = parent;
+        this.origin.z = parent.z;
+    }
+    return this.p;
+}
+// -----------------------------------------------------------------
+// set of get width
 Feature.prototype.width = function(width) {
     if (width !== undefined) {
         this.w = width;
@@ -23,14 +33,13 @@ Feature.prototype.width = function(width) {
     return this.w;
 }
 // -----------------------------------------------------------------
-Feature.prototype.renderAtZ = function(iso, z, opts) {
-    this.renderAt(iso, [this.fX, this.fY, z], opts);
+Feature.prototype.render = function(iso, opts) {
+    this.renderAt(iso, this.origin, opts);
 }
 // -----------------------------------------------------------------
 Feature.prototype.renderAt = function(iso, center, opts) {
-    var at = new Point( center[0], center[1], center[2] );
     iso.add(
-        new Isomer.Path.Star(at, this.w/6, this.w/2, 11),
+        new Isomer.Path.Star(center, this.w/6, this.w/2, 11),
         this.c
     );
 }

@@ -3,25 +3,24 @@ var Color = require('../../bower_components/isomer/index.js').Color;
 var Point = require('../../bower_components/isomer/index.js').Point;
 
 var defaultOptions = {
-    autoRender:  true,    // re-draw the world when anything changes
-    autoSize:    true,    // work out block size to fill the canvas
+    autoRender: true,    // re-draw the world when anything changes
+    autoSize:   true,    // work out block size to fill the canvas
 
-    worldSizeX:    10,    // size of world
-    worldSizeY:    10,    // size of world
+    minX:          0,    // bounds
+    maxX:         10,    // bounds
 
-    worldOriginX:   0,    // starting X coord, in world units
-    worldOriginY:   0,    // starting Y coord, in world units
-    worldOriginZ:   0,    // starting Z coord, in world units
+    minY:          0,    // bounds
+    maxY:         10,    // bounds
 
-    worldScaleZ:    1,    // how many altitude units to a ground co-ord unit?
+    maxH:          5,    // max height of interesting features (used to auto-size)
+    minH:         -8,    // minimum height of interesting features (used to auto-size)
+    scaleH:        1,    // how many altitude units to a ground co-ord unit?
+    bedrockH:    -16,    // how far down to stop drawing the ground
 
     colorScheme: 'bright',
-    maxHeight:      5,    // max height of interesting features (used to auto-size)
-    minHeight:     -8,    // minimum height of interesting features (used to auto-size)
-    bedrockLevel: -16,    // how far down to stop drawing the ground
 
-    blockSize:      1,    // how many 'world' units long is one side of a block?
-    isoGap:         0.05, // gap to leave between blocks
+    blockSize:     1,    // how many 'world' units long is one side of a block?
+    isoGap:        0.05, // gap to leave between blocks
 
     // Isomer rendering options.
     //

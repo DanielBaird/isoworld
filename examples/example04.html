@@ -21,44 +21,61 @@
 <script src="../dist/isoworld.js"></script>
 <script>
 
-    var wX = 102;
-    var wY = 102;
-    var blockSize = 10;
+    var wX = 100;
+    var wY = 100;
+    var wH = 40;
+    var blockSize = 6;
 
-    var f = new World.Forest('theDiv', {
-        worldSizeX: wX,
-        worldSizeY: wY,
-        maxHeight: 20,
-        bedrockLevel: -1000,
-        isoAngle: Math.PI/6,
-        blockSize: blockSize,
+    var f = new IsoWorld.Worlds.Forest('theDiv', {
+        minX:               0,
+        maxX:              wX,
+        minY:               0,
+        maxY:              wY,
+        minH:             -10,
+        maxH:              wH,
+        scaleH:           0.5,
+        bedrockH:       -1000,
+        isoAngle:   Math.PI/6,
+        blockSize:  blockSize,
 
-        worldScaleZ: 0.33
+        showAxes: true
     });
 
     f.autoRender(false);
 
     // set the altitude..
-    for (var x = 0; x < wX; x++) {
-        for (var y = 0; y < wY; y++) {
-            f.groundLevel(x, y, (Math.random() * 5) - 1);
+    var alt, groundLevel;
+    for (var x = 0; x < wX; x+=(blockSize/2)) {
+        for (var y = 0; y < wY; y+=(blockSize/2)) {
+            alt = (Math.random() * 5);
+            // alt = 0;
+            groundLevel = new IsoWorld.Point(x, y, alt);
+            f.ground(groundLevel);
         }
     }
 
-    f.groundLevel(wX-1, wY-1, 15);
-    // f.groundLevel(0,0, 150);
+    f.ground(new IsoWorld.Point(wX-1, wY-1, wH));
+    f.ground(new IsoWorld.Point(0, 0, 0));
+
+    // some points
+    var points = [
+        new IsoWorld.Point(     0, wY*0.1, 0),
+        new IsoWorld.Point(wX*0.8, wY*0.3, 0),
+        new IsoWorld.Point(wX*0.5, wY*0.7, 0),
+        new IsoWorld.Point(     0,   wY-1, 0)
+    ]
 
     // set some ground stacks..
-    // f.ground(     0, wY*0.1, ['water', 2, 'sand', 8, 'soil']);
-    // f.ground(wX*0.8, wY*0.3, ['soil']);
-    // f.ground(wX*0.5, wY*0.7, ['sand', 8, 'leaflitter', 12, 'soil']);
-    f.ground(     0,   wY-1, ['leaflitter']);
+    f.ground(points[0], ['water', 2, 'sand', 8, 'soil']);
+    f.ground(points[1], ['soil']);
+    f.ground(points[2], ['sand', 8, 'leaflitter', 12, 'soil']);
+    f.ground(points[3], ['leaflitter']);
 
-    // // set some features..
-    // f.feature(     0, wY*0.1);
-    // f.feature(wX*0.8, wY*0.3);
-    // f.feature(wX*0.5, wY*0.7);
-    // f.feature(     0,   wY-1);
+    // set some features..
+    f.feature(new IsoWorld.Point(     0, wY*0.1, 0));
+    f.feature(new IsoWorld.Point(wX*0.8, wY*0.3, 0));
+    f.feature(new IsoWorld.Point(wX*0.5, wY*0.7, 0));
+    f.feature(new IsoWorld.Point(     0,   wY-1, 0));
 
     trees = [
         {"id": "972", "tag": "972", "oldtag": "7084", "subplot": "SE-NE", "species": "Dysoxylum papuanum", "family": "Meliaceae", "posX": 102.6, "posY": 75.5, "dbh2013a": 0, "dbh2013b": 0, "dbh2010a": 0, "dbh2010b": "0", "height2010": 28.6 },
@@ -830,7 +847,7 @@
         if (typeof tH != 'number' || tH == 0) {
             tH = tW * 30;
         }
-        f.tree(tree.posX, tree.posY, tW, tH);
+        // f.tree(tree.posX, tree.posY, tW, tH);
     }
 
     f.render();
