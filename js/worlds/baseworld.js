@@ -9,6 +9,8 @@ var Point = Isomer.Point;
 
 var UnitColumn = require('../objects/unitcolumn.js');
 var Feature = require('../objects/feature.js');
+var VerticalFeature = require('../objects/verticalfeature.js');
+var PathFeature = require('../objects/pathfeature.js');
 
 // -----------------------------------------------------------------
 // -----------------------------------------------------------------
@@ -49,28 +51,28 @@ BaseWorld.prototype.autoSize = function() {
     var bY = this._squares[0].length;
 
     var extraHeight = opts.maxH - opts.minH;
-    var xyBlocks = bX + bY + (2 * this.wl2bl(extraHeight, true));
+    var xyBlocks = bX + bY;
 
     // the display is x+y block-diagonals across, and x+y diagonals tall
     var bW = xyBlocks * Math.cos(opts.isoAngle);
-    var bH = xyBlocks * Math.sin(opts.isoAngle);
+    var bH = (xyBlocks + (2 * this.wl2bl(extraHeight, true))) * Math.sin(opts.isoAngle);
 
     // work stuff out.
     var hConstraint = cH / bH;
     var wConstraint = cW / bW;
-    opts.isoScale = Math.min(hConstraint, wConstraint) * 0.95; // a 5% allowance
+    opts.isoScale = Math.min(hConstraint, wConstraint) * 0.99; // a 1% allowance
 
     // position the origin
     var sidePad = Math.max(0, (cW - (opts.isoScale * bW)) / 2);
     var  topPad = Math.max(0, (cH - (opts.isoScale * bH)) / 2);
 
-    opts.isoOriginX = sidePad * 1.05 + ((cW - sidePad - sidePad) * bY / (bX + bY));
+    opts.isoOriginX = sidePad * 1.01 + ((cW - sidePad - sidePad) * bY / (bX + bY));
 
-    opts.isoOriginY = cH - (topPad * 1.05);
+    opts.isoOriginY = cH - (topPad * 1.01);
 
     // rebuild the layers
     this._layers = this.makeLayers();
-    this.render();
+    this.renderMaybe();
 }
 // -----------------------------------------------------------------
 // init our squares
@@ -227,22 +229,33 @@ BaseWorld.prototype.feature = function(wPoint, feature) {
 
     // dodgy undifferentiated feature..
     if (!feature) {
-        feature = new Feature(bP, 0.25);
+        feature = new VerticalFeature(bP);
     }
 
     this._addFeature(bP, feature);
     this.renderMaybe();
 }
 // -----------------------------------------------------------------
+// add a feature at world coords.  The z / height element is ignored
+BaseWorld.prototype.path = function(wPoint, direction) {
+    var bP = this.w2b(wPoint);
+
+    feature = new PathFeature(bP, null, 0.25, direction, new Isomer.Color(255,0,0));
+
+    this._addFeature(bP, feature);
+    this.renderMaybe();
+}
+// -----------------------------------------------------------------
+// adds a feature to the appropriate square.  sets the feature's parent.
 BaseWorld.prototype._addFeature = function(bPoint, feature) {
     if (this._inBlockRange(bPoint)) {
         var sq = this._block(bPoint);
         sq.features.push(feature);
         feature.parent(sq);
 
-        // sort the features, widest first
+        // sort the features by nearness to viewer
         sq.features.sort( function(a, b) {
-            return (b.width() - a.width());
+            return (b.origin().depth() - a.origin().depth());
         });
     }
 }
@@ -433,15 +446,13 @@ BaseWorld.prototype.renderFG = function() {
 
     // draw on origin lines, coz why not
     if (this._opts.showAxes) {
-        this._layers.fg.add(new Isomer.Path([
-            new Isomer.Point(0,-0.01,0), new Isomer.Point(0,0.01,0), new Isomer.Point(10,0,0)
-        ]), new Isomer.Color(255,0,0));
-        this._layers.fg.add(new Isomer.Path([
-            new Isomer.Point(-0.01,0,0), new Isomer.Point(0.01,0,0), new Isomer.Point(0,10,0)
-        ]), new Isomer.Color(255,0,0));
-        this._layers.fg.add(new Isomer.Path([
-            new Isomer.Point(-0.01,-0.01,0), new Isomer.Point(0.01,0.01,0), new Isomer.Point(0,0,10)
-        ]), new Isomer.Color(255,0,0));
+        var axL = 100;   // axis length, in blocks
+        var axW = 0.01;  // axis width, in blocks
+        var Pt = Isomer.Point;
+        var axC = new Isomer.Color(255,0,0);
+        this._layers.fg.add(new Isomer.Path([new Pt(0,axW,0), new Pt(0,0-axW,0), new Pt(axL,0,0)]), axC);
+        this._layers.fg.add(new Isomer.Path([new Pt(0-axW,0,0), new Pt(axW,0,0), new Pt(0,axL,0)]), axC);
+        this._layers.fg.add(new Isomer.Path([new Pt(0-axW,axW,0), new Pt(axW,0-axW,0), new Pt(0,0,axL)]), axC);
     }
 }
 // -----------------------------------------------------------------

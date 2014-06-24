@@ -1,5 +1,5 @@
 
-var Feature = require('./feature');
+var VerticalFeature = require('./verticalfeature');
 var Isomer = require('../../bower_components/isomer');
 var Point = Isomer.Point;
 var Pyramid = Isomer.Shape.Pyramid;
@@ -9,24 +9,26 @@ var Cylinder = Isomer.Shape.Cylinder;
 // TODO this is debugging
 var defaultType;
 var pick = Math.random();
-var types = 'pointy cylindrical stump combination random'.split(' ');
+var types = 'pointy cylindrical stump combination umbrella random'.split(' ');
 defaultType = types[Math.floor(Math.random() * types.length)];
 // override random tree type..
-// defaultType = 'cylindrical';
-defaultType = 'random';
+defaultType = 'umbrella';
+// defaultType = 'random';
 
 // -----------------------------------------------------------------
-function Tree(fX, fY, width, height, trunkColor, leafColor) {
-    Feature.call(this, fX, fY, width, trunkColor);
-    this.h = height;
+function Tree(origin, parent, width, height, trunkColor, leafColor, type) {
+    VerticalFeature.call(this, origin, parent, height);
+    this.w = width;
+    this.cTrunk = trunkColor;
     this.cLeaf = leafColor;
 
     // TODO remove this debug thing
     this.type = defaultType;
+    if (type) this.type = type;
 }
 // -----------------------------------------------------------------
 // inheritance
-Tree.prototype = Object.create(Feature.prototype);
+Tree.prototype = Object.create(VerticalFeature.prototype);
 Tree.prototype.constructor = Tree;
 // -----------------------------------------------------------------
 Tree.prototype.renderAt = function(iso, center, opts) {
@@ -47,9 +49,8 @@ Tree.prototype.renderAt = function(iso, center, opts) {
         var foliageStartRatio = 1/5;
 
         var offset = 0 - (this.w/1.41);
-        var centre = new Point( center[0], center[1], center[2] );
-        var treePt = centre.translate(offset, offset, 0);
-        var foliagePt = centre.translate(
+        var treePt = center.translate(offset, offset, 0);
+        var foliagePt = center.translate(
             offset * foliageWidthRatio,
             offset * foliageWidthRatio,
             this.h * foliageStartRatio
@@ -57,7 +58,7 @@ Tree.prototype.renderAt = function(iso, center, opts) {
         // draw the trunk
         iso.add(
             new Pyramid(treePt, this.w, this.w, this.h * trunkHeightRatio),
-            this.c
+            this.cTrunk
         );
         // draw the foliage
         iso.add(
@@ -66,38 +67,40 @@ Tree.prototype.renderAt = function(iso, center, opts) {
         );
     }
 
-    if (type == 'cylindrical') {
+    if (type == 'cylindrical' || type == 'umbrella') {
 
-        var trunkHeightRatio = 1/3;
-        var foliageWidthRatio = 2;
-        var foliageHeightRatio = 2/3;
-        var foliageStartRatio = 1/3;
+        var trunkHeightRatio = 2/3;
+        var foliageWidthRatio = 5;
+        var foliageStartRatio = 2/3;
+        var foliageHeightRatio = 1/3;
 
-        var offset = 0 - (this.w/2);
-        var trunkOrigin = new Point( center[0], center[1], center[2] );
-        var leafOrigin = trunkOrigin.translate(0, 0, this.h * foliageStartRatio);
+        if (type == 'umbrella') {
+            foliageWidthRatio = 13;
+            trunkHeightRatio = 3/4;
+            foliageStartRatio = 3/4;
+            foliageHeightRatio = 1/4;
+        }
+
+        var radius = this.w * 1;
+        var leafOrigin = center.translate(0, 0, this.h * foliageStartRatio);
+
         // draw the trunk
         iso.add(
-            new Cylinder(trunkOrigin, this.w / 2, 10, this.h * trunkHeightRatio),
-            this.c
+            new Cylinder(center, radius, 22, this.h * trunkHeightRatio),
+            this.cTrunk
         );
         // draw the foliage
+        var fr = radius * foliageWidthRatio;
+        var sides = 5 + fr * 22;
         iso.add(
-            new Cylinder(leafOrigin, this.w * foliageWidthRatio / 2, 10, this.h * foliageHeightRatio),
+            new Cylinder(leafOrigin, radius * foliageWidthRatio, sides, this.h * foliageHeightRatio),
             this.cLeaf
         );
     }
 
     if (type == 'stump') {
-
         var radius = this.w;
-
-        var offset = 0 - radius;
-        var trunkOrigin = new Point( center[0], center[1], center[2] );
-        iso.add(
-            new Cylinder(trunkOrigin, radius, 33, 0.2),
-            this.c
-        );
+        iso.add(new Cylinder(center, radius, 33, this.h), this.cTrunk);
     }
 
     if (type == 'combination') {
@@ -108,9 +111,7 @@ Tree.prototype.renderAt = function(iso, center, opts) {
         var foliageStartRatio = 1/5;
 
         var offset = 0 - (this.w/2);
-        var trunkOrigin = new Point( center[0], center[1], center[2] );
-        var leafOrigin = trunkOrigin.translate(0, 0, this.h * foliageStartRatio);
-        var foliageOrigin = trunkOrigin.translate(
+        var foliageOrigin = center.translate(
             offset * foliageWidthRatio,
             offset * foliageWidthRatio,
             this.h * foliageStartRatio
@@ -118,8 +119,8 @@ Tree.prototype.renderAt = function(iso, center, opts) {
 
         // draw the trunk
         iso.add(
-            new Cylinder(trunkOrigin, this.w / 2, 10, this.h * trunkHeightRatio),
-            this.c
+            new Cylinder(center, this.w / 2, 10, this.h * trunkHeightRatio),
+            this.cTrunk
         );
         // draw the foliage
         iso.add(

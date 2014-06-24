@@ -1,10 +1,10 @@
 
-var Isomer = require('../../bower_components/isomer/index.js');
+var Isomer = require('../../bower_components/isomer');
 var Point = Isomer.Point;
 
 // -----------------------------------------------------------------
-function Feature(bPoint, parent) {
-    this.origin(bPoint);
+function Feature(origin, parent) {
+    this.origin(origin);
     this.parent(parent); // backreference to parent block
 }
 // -----------------------------------------------------------------
@@ -19,7 +19,7 @@ Feature.prototype.origin = function(origin) {
 // -----------------------------------------------------------------
 // set or get parent block
 Feature.prototype.parent = function(parent) {
-    if (parent !== undefined) {
+    if (parent) {
         this.p = parent;
         this._origin.z = parent.z;
     }
@@ -31,10 +31,10 @@ Feature.prototype.render = function(iso, opts) {
 }
 // -----------------------------------------------------------------
 Feature.prototype.renderAt = function(iso, center, opts) {
-    var width = 0.25;
-    var color = new Isomer.Color(255,255,0);
+    var width = 0.75;
+    var color = new Isomer.Color(255,0,255);
     iso.add(
-        new Isomer.Path.Star(center, width/6, width/2, 11),
+        new Isomer.Path.Star(center, width/6, width/2, 7),
         color
     );
 }

@@ -891,17 +891,21 @@
             new IsoWorld.Point(               1, config.maxY-1, 0)
         ]
 
-        // set some ground stacks..
-        f.ground(points[0], ['water', 2, 'sand', 8, 'soil']);
-        f.ground(points[1], ['soil']);
-        f.ground(points[2], ['sand', 8, 'leaflitter', 12, 'soil']);
-        f.ground(points[3], ['leaflitter']);
+        // set some paths
+        f.path(points[2], '+x');
+        f.path(points[2], '-y');
 
-        // set some features..
-        f.feature(points[0]);
-        f.feature(points[1]);
-        f.feature(points[2]);
-        f.feature(points[3]);
+        // // set some ground stacks..
+        // f.ground(points[0], ['water', 2, 'sand', 8, 'soil']);
+        // f.ground(points[1], ['soil']);
+        // f.ground(points[2], ['sand', 8, 'leaflitter', 12, 'soil']);
+        // f.ground(points[3], ['leaflitter']);
+
+        // // set some features..
+        // f.feature(points[0]);
+        // f.feature(points[1]);
+        // f.feature(points[2]);
+        // f.feature(points[3]);
 
         var t, tree;
         var TW, tH;
@@ -914,7 +918,7 @@
             if (typeof tH != 'number' || tH == 0) {
                 tH = tW * 30;
             }
-            f.tree(new IsoWorld.Point(tree.posX, tree.posY, 0), tW, tH);
+            // f.tree(new IsoWorld.Point(tree.posX, tree.posY, 0), tW, tH);
         }
 
         f.render();

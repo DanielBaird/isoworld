@@ -6,9 +6,13 @@ var Tree = require('../objects/tree');
 
 // -----------------------------------------------------------------
 // -----------------------------------------------------------------
-function ForestWorld() {
+function ForestWorld(domElement, options) {
     // invoke our super constructor thingy
-    BaseWorld.apply(this, arguments);
+    BaseWorld.call(this, domElement, options);
+
+    if (options.treeType) {
+        this._treeType = options.treeType;
+    }
 }
 // -----------------------------------------------------------------
 // inheritance
@@ -16,16 +20,20 @@ ForestWorld.prototype = Object.create(BaseWorld.prototype);
 ForestWorld.prototype.constructor = ForestWorld;
 // -----------------------------------------------------------------
 // real object methods..
-ForestWorld.prototype.tree = function(x, y, width, height) {
+ForestWorld.prototype.tree = function(location, width, height) {
 
-    var pos = this.w2bArray([x, y, 0]);
+    var pos = this.w2b(location);
 
     var bW = this.wl2bl(width);
-    var bH = this.wh2bhDelta(height);
+    var bH = this.wl2bl(height, true);
+
+    if (this._treeType && this._treeType == 'stump') {
+        // make stumps all 2m tall
+        bH = this.wl2bl(2, true);
+    }
 
     this._addFeature(
-        pos[0], pos[1],
-        new Tree(pos[3], pos[4], bW, bH, this.getColor('wood'), this.getColor('foliage'))
+        pos, new Tree(pos, null, bW, bH, this.getColor('wood'), this.getColor('foliage'), this._treeType)
     );
 }
 // -----------------------------------------------------------------
