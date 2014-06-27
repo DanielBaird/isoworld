@@ -175,7 +175,7 @@ BaseWorld.prototype.wl2bl = function(length, isVertical) {
     if (isVertical) {
         return length / this._opts.blockSize * this._opts.scaleH;
     } else {
-        return length / this._opts.blockSize;
+        return length / this._opts.blockSize * (1 - this._opts.isoGap);
     }
 }
 // -----------------------------------------------------------------
@@ -364,13 +364,11 @@ BaseWorld.prototype._listToStack = function(list, bP) {
     return stack;
 }
 // -----------------------------------------------------------------
-// set ground level at block point
+// set ground level at block point.  It's okay to set levels outside
+// the world area, they'll still affect the height of blocks inside
+// the area.
 BaseWorld.prototype._setGroundLevel = function(bP) {
-    if (this._inBlockRange(bP)) {
-        this._block(bP).z = bP.z;
-    } else {
-        console.log('isoworld: block ' + bP + ' not in range.');
-    }
+    this._groundHeight.push( bP );
 }
 // -----------------------------------------------------------------
 // set ground stack for a block.
@@ -558,33 +556,64 @@ BaseWorld.prototype._copyGround = function(from, to) {
     to.ground[0].h += aboveBedrock;
 }
 // -----------------------------------------------------------------
-// extrapolate all the ground columns
+// extrapolate all the ground columns and altitudes
 BaseWorld.prototype._extrapolateGround = function() {
     var sqs = this._squares;
     var maxX = sqs.length;
     var maxY = sqs[0].length;
-    var bx, by, dx, dy, gs;
-    var dist, bestDist, candidate, bestCandidate;
+    var bx, by;
 
     for (bx = 0; bx < maxX; bx++) { for (by = 0; by < maxY; by++) {
-        bestCandidate = undefined;
-        bestDist = maxX * maxX + maxY * maxY;
-        for (gs = 0; gs < this._groundStacks.length; gs++) {
-            candidate = this._groundStacks[gs];
-            dx = bx + 0.5 - candidate.x;
-            dy = by + 0.5 - candidate.y;
-            dist = dx*dx + dy*dy;
-            if (dist < bestDist) {
-                bestDist = dist;
-                bestCandidate = candidate;
-            }
-        }
-        if (bestCandidate) {
-            this._copyGround(bestCandidate, sqs[bx][by]);
-        }
+        this._extrapolateGroundForSquare(sqs[bx][by]);
     }}
-
     this.renderMaybe();
+
+}
+// -----------------------------------------------------------------
+// extrapolate all the ground columns and altitudes
+BaseWorld.prototype._extrapolateGroundForSquare = function(sq) {
+
+    // vars we use in both things
+    var dx, dy, dist;
+
+    // work out an average altitude
+    var h, hAlt, voteSize;
+    var sqAlt = 0;
+    var votes = 0;
+    for (var gh=0; gh < this._groundHeight.length; gh++) {
+        h = this._groundHeight[gh];
+        dx = sq.x + 0.5 - h.x;
+        dy = sq.y + 0.5 - h.y;
+        dist = 1 + dx*dx + dy*dy;
+        voteSize = 1 / dist;
+        sqAlt += h.z * voteSize;
+        votes += voteSize;
+    }
+    sqAlt = sqAlt / votes;
+    sq.z = sqAlt;
+    // actually try rounding to the nearest something
+    // var rnd = 1 / 0.333;
+    var rnd = 1;
+    sq.z = Math.round(sqAlt * rnd) / rnd;
+
+    // copy nearest ground stack
+    var maxX = this._squares.length;
+    var maxY = this._squares[0].length;
+    var bestDist, candidate, bestCandidate;
+    var bestDist = maxX * maxX + maxY * maxY;
+    for (var gs = 0; gs < this._groundStacks.length; gs++) {
+        candidate = this._groundStacks[gs];
+        dx = sq.x + 0.5 - candidate.x;
+        dy = sq.y + 0.5 - candidate.y;
+        dist = dx*dx + dy*dy;
+        if (dist < bestDist) {
+            bestDist = dist;
+            bestCandidate = candidate;
+        }
+    }
+    if (bestCandidate) {
+        this._copyGround(bestCandidate, sq);
+    }
 
 }
 // -----------------------------------------------------------------

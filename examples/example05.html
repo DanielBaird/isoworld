@@ -94,7 +94,9 @@
         bedrockH: -1000,
 
         isoAngle: Math.PI/6,
-        blockSize: 20,
+        blockSize: 8,
+
+        isoGap: 0.02,
 
         treeType: 'stump',
         // treeType: 'cylindrical'
@@ -871,29 +873,29 @@
 
         // set the altitude..
         var alt, groundLevel;
-        for (var x = config.minX; x < config.maxX; x+=(config.blockSize/2)) {
-            for (var y = config.minY; y < config.maxY; y+=(config.blockSize/2)) {
-                alt = (Math.random() * 10);
+        for (var x = config.minX; x < config.maxX; x+=(config.blockSize * 3)) {
+            for (var y = config.minY; y < config.maxY; y+=(config.blockSize * 3)) {
+                alt = (Math.random() * 3);
                 // alt = 0;
-                groundLevel = new IsoWorld.Point(x, y, alt);
-                f.ground(groundLevel);
+                // groundLevel = new IsoWorld.Point(x, y, alt);
+                // f.ground(groundLevel);
             }
         }
 
         // some points
         var points = [
-            new IsoWorld.Point(               1, config.maxY*0.15, 0),
-            new IsoWorld.Point(config.maxX*0.85, config.maxY*0.35, 0),
-            new IsoWorld.Point(config.maxX*0.58, config.maxY*0.75, 0),
-            new IsoWorld.Point(               1, config.maxY-1, 0)
+            new IsoWorld.Point(               1, config.maxY*0.15, -4),
+            new IsoWorld.Point(config.maxX*0.85, config.maxY*0.35, 5),
+            new IsoWorld.Point(config.maxX*0.58, config.maxY*0.75, 10),
+            new IsoWorld.Point(               1, config.maxY-1, 30)
         ]
 
-        f.addPath([points[2], points[1]], 0.66, 'gravel');
+        f.addPath([points[2], points[1]], 0.5, 'gravel');
 
         // set some ground stacks..
-        f.ground(points[0], ['water', 2, 'sand', 8, 'soil']);
-        f.ground(points[1], ['soil']);
-        f.ground(points[2], ['sand', 8, 'leaflitter', 12, 'soil']);
+        f.ground(points[0], ['leaflitter', 0.5, 'sand', 8, 'soil']);
+        f.ground(points[1], ['leaflitter', 0.5, 'soil']);
+        f.ground(points[2], ['leaflitter', 0.5, 'sand', 8, 'leaflitter', 12, 'soil']);
         f.ground(points[3], ['leaflitter']);
 
         // set some features..

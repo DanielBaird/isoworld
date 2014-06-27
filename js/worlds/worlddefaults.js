@@ -66,7 +66,7 @@ var colorSchemes = {
         'water': new Color(50, 200, 255, 0.75),
         'wood': new Color(90, 50, 20),
         'foliage': new Color(90, 200, 50, 0.66),
-        'gravel': new Color(80, 110, 150),
+        'gravel': new Color(110, 120, 140),
         'ui': new Color(255, 255, 0, 0.33),
         'highlight': new Color(255, 255, 100, 0.66)
     },
