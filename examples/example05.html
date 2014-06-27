@@ -89,14 +89,14 @@
     var config = {
         minX:   0,  maxX: 100,
         minY:   0,  maxY: 100,
-        minH: -10,  maxH:  50,
+        minH: -10,  maxH:  20,
         scaleH: 1,
         bedrockH: -1000,
 
         isoAngle: Math.PI/6,
-        blockSize: 10,
+        blockSize: 20,
 
-        treeType: 'umbrella',
+        treeType: 'stump',
         // treeType: 'cylindrical'
         // showAxes: true
     }
@@ -873,15 +873,12 @@
         var alt, groundLevel;
         for (var x = config.minX; x < config.maxX; x+=(config.blockSize/2)) {
             for (var y = config.minY; y < config.maxY; y+=(config.blockSize/2)) {
-                alt = (Math.random() * 3);
+                alt = (Math.random() * 10);
                 // alt = 0;
                 groundLevel = new IsoWorld.Point(x, y, alt);
                 f.ground(groundLevel);
             }
         }
-
-        // f.ground(new IsoWorld.Point(wX-1, wY-1, wH));
-        // f.ground(new IsoWorld.Point(0, 0, 0));
 
         // some points
         var points = [
@@ -891,21 +888,19 @@
             new IsoWorld.Point(               1, config.maxY-1, 0)
         ]
 
-        // set some paths
-        f.path(points[2], '+x');
-        f.path(points[2], '-y');
+        f.addPath([points[2], points[1]], 0.66, 'gravel');
 
-        // // set some ground stacks..
-        // f.ground(points[0], ['water', 2, 'sand', 8, 'soil']);
-        // f.ground(points[1], ['soil']);
-        // f.ground(points[2], ['sand', 8, 'leaflitter', 12, 'soil']);
-        // f.ground(points[3], ['leaflitter']);
+        // set some ground stacks..
+        f.ground(points[0], ['water', 2, 'sand', 8, 'soil']);
+        f.ground(points[1], ['soil']);
+        f.ground(points[2], ['sand', 8, 'leaflitter', 12, 'soil']);
+        f.ground(points[3], ['leaflitter']);
 
-        // // set some features..
-        // f.feature(points[0]);
-        // f.feature(points[1]);
-        // f.feature(points[2]);
-        // f.feature(points[3]);
+        // set some features..
+        f.feature(points[0]);
+        f.feature(points[1]);
+        f.feature(points[2]);
+        f.feature(points[3]);
 
         var t, tree;
         var TW, tH;
@@ -918,11 +913,9 @@
             if (typeof tH != 'number' || tH == 0) {
                 tH = tW * 30;
             }
-            // f.tree(new IsoWorld.Point(tree.posX, tree.posY, 0), tW, tH);
+            f.tree(new IsoWorld.Point(tree.posX, tree.posY, 0), tW, tH);
         }
-
         f.render();
-
         window.document.body.style.cursor = 'auto';
     }
 

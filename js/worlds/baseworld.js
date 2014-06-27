@@ -91,6 +91,7 @@ BaseWorld.prototype.initSquares = function() {
                 y: y,
                 z: 0,
                 ground: [],
+                paths: [],
                 features: []
             });
         }
@@ -236,13 +237,64 @@ BaseWorld.prototype.feature = function(wPoint, feature) {
     this.renderMaybe();
 }
 // -----------------------------------------------------------------
-// add a feature at world coords.  The z / height element is ignored
-BaseWorld.prototype.path = function(wPoint, direction) {
-    var bP = this.w2b(wPoint);
+// add a path that follows the points given.
+BaseWorld.prototype.addPath = function(points, width, type) {
+    var p1, p2;
+    var c = this.getColor(type);
+    for (var p=1; p < points.length; p++) {
+        p1 = this.w2b(points[p-1]);
+        p2 = this.w2b(points[p]);
+        this._pathBetween(p1, p2, width, c);
+    }
+}
+// -----------------------------------------------------------------
+// add a path that follows the points given.
+BaseWorld.prototype._pathBetween = function(from, to, width, color) {
 
-    feature = new PathFeature(bP, null, 0.25, direction, new Isomer.Color(255,0,0));
+    var currB = this._block(from);
+    var currP = new Point(currB.x + 0.5, currB.y + 0.5, currB.z);
 
-    this._addFeature(bP, feature);
+    var finalB = this._block(to);
+    var nextB, nextP, xDiff, yDiff;
+
+    // TODO: check for valid positions
+
+    while (currB != finalB) {
+        // there's four directions to go..
+        xDiff = finalB.x - currB.x;
+        yDiff = finalB.y - currB.y;
+        if (Math.abs(xDiff) > Math.abs(yDiff)) {
+            // let's move along the x axis
+            if (xDiff < 0) {
+                nextB = this._block(new Point(currB.x - 1, currB.y, 0));
+                nextP = new Point(nextB.x + 0.5, nextB.y + 0.5, 0);
+                currB.paths.push(new PathFeature(currP, currB, width, '-x', color));
+                nextB.paths.push(new PathFeature(nextP, nextB, width, '+x', color));
+            } else {
+                nextB = this._block(new Point(currB.x + 1, currB.y, 0));
+                nextP = new Point(nextB.x + 0.5, nextB.y + 0.5, 0);
+                currB.paths.push(new PathFeature(currP, currB, width, '+x', color));
+                nextB.paths.push(new PathFeature(nextP, nextB, width, '-x', color));
+            }
+        } else {
+            // move along the y axis
+            if (yDiff < 0) {
+                nextB = this._block(new Point(currB.x, currB.y - 1, 0));
+                nextP = new Point(nextB.x + 0.5, nextB.y + 0.5, 0);
+                currB.paths.push(new PathFeature(currP, currB, width, '-y', color));
+                nextB.paths.push(new PathFeature(nextP, nextB, width, '+y', color));
+            } else {
+                nextB = this._block(new Point(currB.x, currB.y + 1, 0));
+                nextP = new Point(nextB.x + 0.5, nextB.y + 0.5, 0);
+                currB.paths.push(new PathFeature(currP, currB, width, '+y', color));
+                nextB.paths.push(new PathFeature(nextP, nextB, width, '-y', color));
+            }
+        }
+
+        currB = nextB;
+        currP = new Point(currB.x + 0.5, currB.y + 0.5, currB.z);
+    }
+
     this.renderMaybe();
 }
 // -----------------------------------------------------------------
@@ -336,6 +388,7 @@ BaseWorld.prototype._setGroundStack = function(bP, list) {
 // render a square
 BaseWorld.prototype.renderSquare = function(x, y) {
     this.renderSquareGround(x, y);
+    this.renderSquarePaths(x, y);
     this.renderSquareFeatures(x, y);
 }
 // -----------------------------------------------------------------
@@ -361,6 +414,22 @@ BaseWorld.prototype.renderSquareFeatures = function(x, y) {
                 step += increment;
                 feature.render(this._layers.fg, this._opts);
                 // feature.renderAt(this._layers.fg, [x + step, y + 1 - gap - step, sq.z], this._opts);
+            }
+        }
+    }
+}
+// -----------------------------------------------------------------
+// render a square
+BaseWorld.prototype.renderSquarePaths = function(x, y) {
+
+    var sq = this._squares[x][y];
+
+    if (sq !== undefined) {
+        if (sq.paths && sq.paths.length > 0) {
+            var p, path;
+            for (p=0; p < sq.paths.length; p++) {
+                path = sq.paths[p];
+                path.render(this._layers.fg, this._opts);
             }
         }
     }
@@ -465,20 +534,6 @@ BaseWorld.prototype.render = function() {
 // render, only if we're supoosed to re-render automatically
 BaseWorld.prototype.renderMaybe = function() {
     if (this._autoRender) { this.render(); }
-}
-// -----------------------------------------------------------------
-// extrapolate all the ground columns
-BaseWorld.prototype._neighbours = function(x, y) {
-    var neighbours = [];
-    for (var dx = -1; dx <= 1; dx++) {
-        for (var dy = -1; dy <= 1; dy++) {
-            if (dx == 0 && dy == 0) continue;
-            if (this.validatePosition(x + dx, y + dy)) {
-                neighbours.push({x: x + dx, y: y + dy});
-            }
-        }
-    }
-    return neighbours;
 }
 // -----------------------------------------------------------------
 // copy a ground column between squares
