@@ -15,6 +15,7 @@ var defaultOptions = {
     maxH:          5,    // max height of interesting features (used to auto-size)
     minH:         -8,    // minimum height of interesting features (used to auto-size)
     scaleH:        1,    // how many altitude units to a ground co-ord unit?
+    stepH:         0.1,  // round ground heights to the nearest 0.25 of a world unit
     bedrockH:    -16,    // how far down to stop drawing the ground
 
     colorScheme: 'bright',

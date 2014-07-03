@@ -240,11 +240,12 @@ BaseWorld.prototype.feature = function(wPoint, feature) {
 // add a path that follows the points given.
 BaseWorld.prototype.addPath = function(points, width, type) {
     var p1, p2;
+    var w = this.wl2bl(width);
     var c = this.getColor(type);
     for (var p=1; p < points.length; p++) {
         p1 = this.w2b(points[p-1]);
         p2 = this.w2b(points[p]);
-        this._pathBetween(p1, p2, width, c);
+        this._pathBetween(p1, p2, w, c);
     }
 }
 // -----------------------------------------------------------------
@@ -253,6 +254,7 @@ BaseWorld.prototype._pathBetween = function(from, to, width, color) {
 
     var currB = this._block(from);
     var currP = new Point(currB.x + 0.5, currB.y + 0.5, currB.z);
+    var w = Math.min(1, width);
 
     var finalB = this._block(to);
     var nextB, nextP, xDiff, yDiff;
@@ -268,26 +270,26 @@ BaseWorld.prototype._pathBetween = function(from, to, width, color) {
             if (xDiff < 0) {
                 nextB = this._block(new Point(currB.x - 1, currB.y, 0));
                 nextP = new Point(nextB.x + 0.5, nextB.y + 0.5, 0);
-                currB.paths.push(new PathFeature(currP, currB, width, '-x', color));
-                nextB.paths.push(new PathFeature(nextP, nextB, width, '+x', color));
+                currB.paths.push(new PathFeature(currP, currB, w, '-x', color));
+                nextB.paths.push(new PathFeature(nextP, nextB, w, '+x', color));
             } else {
                 nextB = this._block(new Point(currB.x + 1, currB.y, 0));
                 nextP = new Point(nextB.x + 0.5, nextB.y + 0.5, 0);
-                currB.paths.push(new PathFeature(currP, currB, width, '+x', color));
-                nextB.paths.push(new PathFeature(nextP, nextB, width, '-x', color));
+                currB.paths.push(new PathFeature(currP, currB, w, '+x', color));
+                nextB.paths.push(new PathFeature(nextP, nextB, w, '-x', color));
             }
         } else {
             // move along the y axis
             if (yDiff < 0) {
                 nextB = this._block(new Point(currB.x, currB.y - 1, 0));
                 nextP = new Point(nextB.x + 0.5, nextB.y + 0.5, 0);
-                currB.paths.push(new PathFeature(currP, currB, width, '-y', color));
-                nextB.paths.push(new PathFeature(nextP, nextB, width, '+y', color));
+                currB.paths.push(new PathFeature(currP, currB, w, '-y', color));
+                nextB.paths.push(new PathFeature(nextP, nextB, w, '+y', color));
             } else {
                 nextB = this._block(new Point(currB.x, currB.y + 1, 0));
                 nextP = new Point(nextB.x + 0.5, nextB.y + 0.5, 0);
-                currB.paths.push(new PathFeature(currP, currB, width, '+y', color));
-                nextB.paths.push(new PathFeature(nextP, nextB, width, '-y', color));
+                currB.paths.push(new PathFeature(currP, currB, w, '+y', color));
+                nextB.paths.push(new PathFeature(nextP, nextB, w, '-y', color));
             }
         }
 
@@ -590,11 +592,9 @@ BaseWorld.prototype._extrapolateGroundForSquare = function(sq) {
         votes += voteSize;
     }
     sqAlt = sqAlt / votes;
-    sq.z = sqAlt;
-    // actually try rounding to the nearest something
-    // var rnd = 1 / 0.333;
-    var rnd = 1;
-    sq.z = Math.round(sqAlt * rnd) / rnd;
+    // round to the nearest stepH
+    var rnd = this.wl2bl(this._opts.stepH, true);
+    sq.z = Math.round(sqAlt / rnd) * rnd;
 
     // copy nearest ground stack
     var maxX = this._squares.length;
