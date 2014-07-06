@@ -43,10 +43,10 @@ Tree.prototype.renderAt = function(iso, center, opts) {
 
     if (type == 'pointy') {
 
-        var trunkHeightRatio = 4/5;
-        var foliageWidthRatio = 2;
-        var foliageHeightRatio = 4/5;
-        var foliageStartRatio = 1/5;
+        var trunkHeightRatio = 2/3;
+        var foliageWidthRatio = 4;
+        var foliageHeightRatio = 2/3;
+        var foliageStartRatio = 1/3;
 
         var offset = 0 - (this.w/1.41);
         var treePt = center.translate(offset, offset, 0);

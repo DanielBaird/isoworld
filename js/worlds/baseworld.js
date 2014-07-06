@@ -307,10 +307,18 @@ BaseWorld.prototype._addFeature = function(bPoint, feature) {
         sq.features.push(feature);
         feature.parent(sq);
 
-        // sort the features by nearness to viewer
-        sq.features.sort( function(a, b) {
-            return (b.origin().depth() - a.origin().depth());
-        });
+        // sort the features for display..
+        if (this._opts.featurePosition == 'line') {
+            // ..by height
+            sq.features.sort( function(a, b) {
+                return (b.h - a.h);
+            });
+        } else {
+            // ..by nearness
+            sq.features.sort( function(a, b) {
+                return (b.origin().depth() - a.origin().depth());
+            });
+        }
     }
 }
 // -----------------------------------------------------------------
@@ -399,21 +407,28 @@ BaseWorld.prototype.renderSquareFeatures = function(x, y) {
 
     if (sq !== undefined) {
         if (sq.features && sq.features.length > 0) {
-            // there's features to render.
-            // we draw features along the line from left corner
-            // to right corner.  So we need to find points for
-            // all the features along that line.
-            // The +2 is +1 for the fencepost error, and +1 more to
-            // add half a feature's worth of padding at each end
-            var f, feature;
-            var gap = this._opts.isoGap;
-            var increment = (1 - gap) / (sq.features.length + 2);
-            var step = increment/2;
-            for (f=0; f < sq.features.length; f++) {
-                feature = sq.features[f];
-                step += increment;
-                feature.render(this._layers.fg, this._opts);
-                // feature.renderAt(this._layers.fg, [x + step, y + 1 - gap - step, sq.z], this._opts);
+            if (this._opts.featurePosition == 'line') {
+                // there's features to render.
+                // we draw features along the line from left corner
+                // to right corner.  So we need to find points for
+                // all the features along that line.
+                // The +2 is +1 for the fencepost error, and +1 more to
+                // add half a feature's worth of padding at each end
+                var f, feature;
+                var gap = this._opts.isoGap;
+                var increment = (1 - gap) / (sq.features.length + 2);
+                var step = increment/2;
+                for (f=0; f < sq.features.length; f++) {
+                    feature = sq.features[f];
+                    step += increment;
+                    feature.renderAt(this._layers.fg, new Point(x + step, y + 1 - gap - step, sq.z), this._opts);
+                }
+            } else {
+                // featurePosition == 'accurate'
+                var f, feature;
+                for (f=0; f < sq.features.length; f++) {
+                    sq.features[f].render(this._layers.fg, this._opts);
+                }
             }
         }
     }
@@ -528,7 +543,7 @@ BaseWorld.prototype.renderFG = function() {
 // render
 BaseWorld.prototype.render = function() {
     this.renderFG();
-    // this.renderUI();
+    this.renderUI();
 }
 // -----------------------------------------------------------------
 // render, only if we're supoosed to re-render automatically

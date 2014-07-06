@@ -18,6 +18,8 @@ var defaultOptions = {
     stepH:         0.1,  // round ground heights to the nearest 0.25 of a world unit
     bedrockH:    -16,    // how far down to stop drawing the ground
 
+    featurePosition: 'accurate',
+
     colorScheme: 'bright',
 
     blockSize:     1,    // how many 'world' units long is one side of a block?
