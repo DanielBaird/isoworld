@@ -253,48 +253,58 @@ BaseWorld.prototype.addPath = function(points, width, type) {
 BaseWorld.prototype._pathBetween = function(from, to, width, color) {
 
     var currB = this._block(from);
-    var currP = new Point(currB.x + 0.5, currB.y + 0.5, currB.z);
+    var currP = new Point(currB.x, currB.y, 0);
+
     var w = Math.min(1, width);
 
     var finalB = this._block(to);
-    var nextB, nextP, xDiff, yDiff;
+    var finalP = new Point(finalB.x, finalB.y, 0);
 
     // TODO: check for valid positions
 
-    while (currB != finalB) {
-        // there's four directions to go..
-        xDiff = finalB.x - currB.x;
-        yDiff = finalB.y - currB.y;
-        if (Math.abs(xDiff) > Math.abs(yDiff)) {
-            // let's move along the x axis
-            if (xDiff < 0) {
-                nextB = this._block(new Point(currB.x - 1, currB.y, 0));
-                nextP = new Point(nextB.x + 0.5, nextB.y + 0.5, 0);
-                currB.paths.push(new PathFeature(currP, currB, w, '-x', color));
-                nextB.paths.push(new PathFeature(nextP, nextB, w, '+x', color));
-            } else {
-                nextB = this._block(new Point(currB.x + 1, currB.y, 0));
-                nextP = new Point(nextB.x + 0.5, nextB.y + 0.5, 0);
-                currB.paths.push(new PathFeature(currP, currB, w, '+x', color));
-                nextB.paths.push(new PathFeature(nextP, nextB, w, '-x', color));
-            }
-        } else {
-            // move along the y axis
-            if (yDiff < 0) {
-                nextB = this._block(new Point(currB.x, currB.y - 1, 0));
-                nextP = new Point(nextB.x + 0.5, nextB.y + 0.5, 0);
-                currB.paths.push(new PathFeature(currP, currB, w, '-y', color));
-                nextB.paths.push(new PathFeature(nextP, nextB, w, '+y', color));
-            } else {
-                nextB = this._block(new Point(currB.x, currB.y + 1, 0));
-                nextP = new Point(nextB.x + 0.5, nextB.y + 0.5, 0);
-                currB.paths.push(new PathFeature(currP, currB, w, '+y', color));
-                nextB.paths.push(new PathFeature(nextP, nextB, w, '-y', color));
-            }
+    // Bresenham's line drawing algo, from here https://gist.github.com/hexusio/5079147
+    var toX = finalB.x;
+    var toY = finalB.y;
+    var currX = currB.x;
+    var currY = currB.y;
+    var nextX = currX;
+    var nextY = currY;
+
+    var diffX = Math.abs(toX - currX);
+    var diffY = Math.abs(toY - currY);
+    var stepX = currX < toX ? 1 : -1;
+    var stepY = currY < toY ? 1 : -1;
+    var err = diffX - diffY;
+    var e2, prevDir, nextDir;
+
+    while(currX != toX || currY != toY) {
+        // take a step
+        e2 = 2 * err;
+        if (e2 >- diffY) {
+            err = err - diffY;
+            nextX = currX + stepX;
+            oldDir = stepX < 0 ? '-x' : '+x';
+            newDir = stepX < 0 ? '+x' : '-x';
+        } else if (e2 < diffX) {
+            err = err + diffX;
+            nextY = currY + stepY;
+            oldDir = stepY < 0 ? '-y' : '+y';
+            newDir = stepY < 0 ? '+y' : '-y';
         }
 
-        currB = nextB;
-        currP = new Point(currB.x + 0.5, currB.y + 0.5, currB.z);
+        // path on the old block
+        currB.paths.push(new PathFeature(currP, currB, w, oldDir, color));
+
+        // update the block
+        currB = this._block(new Point(nextX, nextY));
+        currP = new Point(currB.x + 0.5, currB.y + 0.5, 0);
+
+        // path on the new block
+        currB.paths.push(new PathFeature(currP, currB, w, newDir, color));
+
+        // update the x and y
+        currX = nextX;
+        currY = nextY;
     }
 
     this.renderMaybe();

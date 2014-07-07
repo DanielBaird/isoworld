@@ -43,6 +43,9 @@
             line-height: 1.5;
             margin: 0.25em 0;
         }
+        #buttonDiv button.narrow {
+            width: 17%;
+        }
     </style>
 </head>
 <body>
@@ -64,10 +67,12 @@
         <button type="button" onclick="set('blockSize', 15);">15&#x200a;&times;&#x200a;15</button>
         <button type="button" onclick="set('blockSize', 20);">20&#x200a;&times;&#x200a;20</button>
 
-        <h1>vertical scale (shorter trees)</h1>
-        <button type="button" onclick="set('scaleH', 1);">1:1</button>
-        <button type="button" onclick="set('scaleH', 0.5);">1:2</button>
-        <button type="button" onclick="set('scaleH', 0.25);">1:4</button>
+        <h1>vertical scale (horiz&thinsp;:&thinsp;vert)</h1>
+        <button class="narrow" type="button" onclick="set('scaleH', 2);">2:1</button>
+        <button class="narrow" type="button" onclick="set('scaleH', 2);">2:1</button>
+        <button class="narrow" type="button" onclick="set('scaleH', 1);">1:1</button>
+        <button class="narrow" type="button" onclick="set('scaleH', 0.5);">1:2</button>
+        <button class="narrow" type="button" onclick="set('scaleH', 0.25);">1:4</button>
 
         <h1>tree type</h1>
         <button type="button" onclick="set('treeType', 'pointy');">pointy</button>
@@ -85,9 +90,11 @@
         <button type="button" onclick="set('showAxes', true);">show</button>
         <button type="button" onclick="set('showAxes', false);">hide</button>
 
-        <h1>headroom</h1>
-        <button type="button" onclick="set('maxH', 50);">50m</button>
-        <button type="button" onclick="set('maxH', 20);">20m</button>
+        <h1>headroom (metres)</h1>
+        <button class="narrow" type="button" onclick="set('maxH', 50);">50</button>
+        <button class="narrow" type="button" onclick="set('maxH', 20);">20</button>
+        <button class="narrow" type="button" onclick="set('maxH', 10);">10</button>
+        <button class="narrow" type="button" onclick="set('maxH', 0);">0</button>
 
     </div>
 </div>
@@ -103,9 +110,9 @@
         bedrockH: -1000,
 
         isoAngle: Math.PI/6,
-        blockSize: 8,
+        blockSize: 10,
 
-        featurePosition: 'line',
+        featurePosition: 'accurate',
 
         isoGap: 0.02,
 
@@ -886,11 +893,11 @@
         var points = [
             new IsoWorld.Point(               1, config.maxY*0.15, -4),
             new IsoWorld.Point(config.maxX*0.85, config.maxY*0.35, 5),
-            new IsoWorld.Point(config.maxX*0.58, config.maxY*0.75, 10),
+            new IsoWorld.Point(config.maxX*0.58, config.maxY*0.95, 10),
             new IsoWorld.Point(               1, config.maxY-1, 20)
         ]
 
-        f.addPath([points[2], points[1]], 2, 'gravel');
+        f.addPath([points[2], points[1], points[0]], 2, 'gravel');
 
         // set some ground stacks..
         f.ground(points[0], ['leaflitter', 0.5, 'sand', 8, 'soil']);
