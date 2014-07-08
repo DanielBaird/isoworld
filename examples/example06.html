@@ -59,13 +59,13 @@
         <button type="button" onclick="set('isoAngle', Math.PI/12);">side</button>
 
         <h1>block size (metres)</h1>
-        <button type="button" onclick="set('blockSize', 1);">1&#x200a;&times;&#x200a;1</button>
-        <button type="button" onclick="set('blockSize', 2.5);">2&frac12;&#x200a;&times;&#x200a;2&frac12;</button>
-        <button type="button" onclick="set('blockSize', 5); ">5&#x200a;&times;&#x200a;5</button>
-        <button type="button" onclick="set('blockSize', 7.5);">7&frac12;&#x200a;&times;&#x200a;7&frac12;</button>
-        <button type="button" onclick="set('blockSize', 10);">10&#x200a;&times;&#x200a;10</button>
-        <button type="button" onclick="set('blockSize', 15);">15&#x200a;&times;&#x200a;15</button>
-        <button type="button" onclick="set('blockSize', 20);">20&#x200a;&times;&#x200a;20</button>
+        <button class="narrow" type="button" onclick="set('blockSize', 1);">1</button>
+        <button class="narrow" type="button" onclick="set('blockSize', 2.5);">2&frac12;</button>
+        <button class="narrow" type="button" onclick="set('blockSize', 5); ">5</button>
+        <button class="narrow" type="button" onclick="set('blockSize', 7.5);">7&frac12;</button>
+        <button class="narrow" type="button" onclick="set('blockSize', 10);">10</button>
+        <button class="narrow" type="button" onclick="set('blockSize', 15);">15</button>
+        <button class="narrow" type="button" onclick="set('blockSize', 20);">20</button>
 
         <h1>vertical scale (horiz&thinsp;:&thinsp;vert)</h1>
         <button class="narrow" type="button" onclick="set('scaleH', 2);">2:1</button>
@@ -73,6 +73,13 @@
         <button class="narrow" type="button" onclick="set('scaleH', 1);">1:1</button>
         <button class="narrow" type="button" onclick="set('scaleH', 0.5);">1:2</button>
         <button class="narrow" type="button" onclick="set('scaleH', 0.25);">1:4</button>
+
+        <h1>vertical step (of block size)</h1>
+        <button class="narrow" type="button" onclick="set('stepHRatio', 1);">1</button>
+        <button class="narrow" type="button" onclick="set('stepHRatio', 2);">&frac12;</button>
+        <button class="narrow" type="button" onclick="set('stepHRatio', 3);">&frac13;</button>
+        <button class="narrow" type="button" onclick="set('stepHRatio', 4);">&frac14;</button>
+        <button class="narrow" type="button" onclick="set('stepHRatio', 10);">0.1</button>
 
         <h1>tree type</h1>
         <button type="button" onclick="set('treeType', 'pointy');">pointy</button>
@@ -106,11 +113,11 @@
         minY:   0,  maxY: 100,
         minH: -10,  maxH:  20,
         scaleH: 1,
-        stepH:  2.5,
+        stepH:  2,
         bedrockH: -1000,
 
         isoAngle: Math.PI/6,
-        blockSize: 10,
+        blockSize: 5,
 
         featurePosition: 'accurate',
 
@@ -119,6 +126,10 @@
         treeType: 'stump',
         // treeType: 'cylindrical'
         // showAxes: true
+
+        // settings not directly used by isoworld!
+        stepHRatio: 3 // stepH = blockSize / stepHRatio
+
     }
 
     var trees = [
@@ -884,6 +895,9 @@
     var f;
 
     function draw() {
+
+        // calc some things..
+        config['stepH'] = config.blockSize / config.stepHRatio;
 
         f = new IsoWorld.Worlds.Forest('diagramDiv', config);
 
