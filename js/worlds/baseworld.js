@@ -640,6 +640,11 @@ BaseWorld.prototype._extrapolateGroundForSquare = function(sq) {
         this._copyGround(bestCandidate, sq);
     }
 
+    // finally, reparent all this square's features
+    for (var f=0; f < sq.features.length; f++) {
+        sq.features[f].parent(sq);
+    }
+
 }
 // -----------------------------------------------------------------
 // -----------------------------------------------------------------

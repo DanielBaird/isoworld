@@ -3,6 +3,7 @@ require('../util/shims');
 
 var BaseWorld = require('./baseworld');
 var Tree = require('../objects/tree');
+var LeafTrap = require('../objects/leaftrap');
 
 // -----------------------------------------------------------------
 // -----------------------------------------------------------------
@@ -20,6 +21,7 @@ ForestWorld.prototype = Object.create(BaseWorld.prototype);
 ForestWorld.prototype.constructor = ForestWorld;
 // -----------------------------------------------------------------
 // real object methods..
+// -----------------------------------------------------------------
 ForestWorld.prototype.tree = function(location, width, height) {
 
     var pos = this.w2b(location);
@@ -35,6 +37,15 @@ ForestWorld.prototype.tree = function(location, width, height) {
     this._addFeature(
         pos, new Tree(pos, null, bW, bH, this.getColor('wood'), this.getColor('foliage'), this._treeType)
     );
+}
+// -----------------------------------------------------------------
+ForestWorld.prototype.leafTrap = function(location) {
+    var pos = this.w2b(location);
+    var w = this.wl2bl(20);
+    var h = this.wl2bl(20, true);
+    var trap = new LeafTrap(pos, null, w, h, this.getColor('wood'));
+
+    this._addFeature(pos, trap);
 }
 // -----------------------------------------------------------------
 module.exports = ForestWorld;
