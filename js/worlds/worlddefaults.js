@@ -70,6 +70,8 @@ var colorSchemes = {
         'wood': new Color(90, 50, 20),
         'foliage': new Color(90, 200, 50, 0.66),
         'gravel': new Color(120, 135, 180),
+        'leaftrap': new Color(50, 50, 50, 0.9),
+        'structure': new Color(230, 230, 230),
         'ui': new Color(255, 255, 0, 0.33),
         'highlight': new Color(255, 255, 100, 0.66)
     },
@@ -81,6 +83,9 @@ var colorSchemes = {
         'water': new Color(50, 150, 255, 0.75),
         'wood': new Color(50, 40, 30, 0.66),
         'foliage': new Color(90, 200, 50, 0.66),
+        'gravel': new Color(120, 135, 180),
+        'leaftrap': new Color(50, 50, 50),
+        'structure': new Color(200, 200, 200),
         'ui': new Color(255, 255, 100, 0.33),
         'highlight': new Color(255, 255, 100, 0.66)
     }

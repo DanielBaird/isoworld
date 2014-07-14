@@ -41,9 +41,9 @@ ForestWorld.prototype.tree = function(location, width, height) {
 // -----------------------------------------------------------------
 ForestWorld.prototype.leafTrap = function(location) {
     var pos = this.w2b(location);
-    var w = this.wl2bl(20);
-    var h = this.wl2bl(20, true);
-    var trap = new LeafTrap(pos, null, w, h, this.getColor('wood'));
+    var w = this.wl2bl(2);
+    var h = this.wl2bl(2, true);
+    var trap = new LeafTrap(pos, null, w, h, this.getColor('leaftrap'), this.getColor('structure'));
 
     this._addFeature(pos, trap);
 }
