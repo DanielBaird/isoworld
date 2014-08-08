@@ -7,8 +7,9 @@ var Cone = require('../shapes/cone');
 var Ring = require('../shapes/ring');
 
 // -----------------------------------------------------------------
-function Dendrometer(origin, parent, height, width, color1, color2) {
+function Dendrometer(origin, parent, height, diameter, width, color1, color2) {
     VerticalFeature.call(this, origin, parent, height);
+    this.d = diameter;
     this.w = width;
     this.c1 = color1;
     this.c2 = color2 || color1;
@@ -20,29 +21,16 @@ Dendrometer.prototype.constructor = Dendrometer;
 // -----------------------------------------------------------------
 Dendrometer.prototype.renderAt = function(iso, center, opts) {
 
-    var halfw = this.w/2;
-    var poler = this.w/50;
-    var poledist = (halfw - 2 * poler) / Math.SQRT2;
-    var catcherh = this.h * 4/5;
-    var ringh = this.h * 1/10;
+    var bandRadius = this.d/2;
+    var meterRadius = this.w;
+    var meterHeight = meterRadius;
+    var meterDist = (bandRadius + meterRadius) / Math.SQRT2;
+    var ringPt = center.translate(0, 0, this.h - this.w);
+    var meterPt = center.translate(meterDist, 0 - meterDist, this.h);
 
-    // upside down pyramid with supporting poles in each corner
-    var polePt1 = center.translate(poledist, -1 * poledist, 0);
-    var polePt2 = center.translate(-1 * poledist, poledist, 0);
-    var catcherPt = center.translate(0, 0, this.h - catcherh);
-    var ringPt = center.translate(0, 0, this.h - ringh);
-
-    iso.add(new Cylinder(polePt1, poler, 6, this.h), this.c2);
-    iso.add(new Cylinder(polePt2, poler, 6, this.h), this.c2);
-    iso.add(new Cone.Inverted.Open(catcherPt, halfw, 15, catcherh), this.c1);
-    iso.add(new Ring(ringPt, halfw, 7, ringh), this.c2);
-    // iso.add(new Ring(ringPt.translate(0,0,-1 * ringh), halfw, 7, ringh), this.c1);
-
-    // iso.add(
-    //     new Cylinder(center, this.w / 2, 10, this.h * trunkHeightRatio),
-    //     this.cTrunk
-    // );
-
+    iso.add(new Ring(ringPt, bandRadius, 7, this.w), this.c1);
+    iso.add(new Cylinder(meterPt.translate(0,0,-2 * meterHeight), meterRadius, 14, meterHeight * 2), this.c2);
+    iso.add(new Cone(meterPt, meterRadius, 14, meterHeight), this.c2);
 }
 // -----------------------------------------------------------------
 module.exports = Dendrometer;

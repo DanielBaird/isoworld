@@ -37,22 +37,22 @@ var BaseCone = function (origin, radius, vertices, height, inverted, open) {
 	}
 
 	// now march along the base path, making the side panels
+	var side;
 	for (i = 1; i < vertices; i++) {
-		cone.push(
-			new Path([
-				basePath.points[i-1],
-				basePath.points[i],
-				tip
-			])
-		);
+		if (inverted) {
+			side = new Path([basePath.points[i], basePath.points[i-1], tip]);
+		} else {
+			side = new Path([basePath.points[i-1], basePath.points[i], tip]);
+		}
+		cone.push(side);
 	}
-	cone.push(
-		new Path([
-			basePath.points[i-1],
-			basePath.points[0],
-			tip
-		])
-	);
+	// add the last panel
+	if (inverted) {
+		side = new Path([basePath.points[0], basePath.points[i-1], tip]);
+	} else {
+		side = new Path([basePath.points[i-1], basePath.points[0], tip]);
+	}
+	cone.push(side);
 
 	return cone;
 };

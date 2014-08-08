@@ -87,6 +87,7 @@
         <button type="button" onclick="set('treeType', 'stump');">stump</button>
         <button type="button" onclick="set('treeType', 'combination');">combo</button>
         <button type="button" onclick="set('treeType', 'umbrella');">umbrella</button>
+        <button type="button" onclick="set('treeType', 'canopytop');">canopy</button>
         <button type="button" onclick="set('treeType', 'random');">random</button>
 
         <h1>feature positioning</h1>
@@ -109,15 +110,15 @@
 <script src="../dist/isoworld.js"></script>
 <script>
     var config = {
-        minX:   0,  maxX: 100,
-        minY:   0,  maxY: 100,
+        minX:   -10,  maxX: 110,
+        minY:   -10,  maxY: 110,
         minH: -10,  maxH:  20,
-        scaleH: 1,
+        scaleH: 0.1,
         stepH:  2,
         bedrockH: -1000,
 
         isoAngle: Math.PI/6,
-        blockSize: 5,
+        blockSize: 120,
 
         featurePosition: 'accurate',
 
@@ -128,7 +129,7 @@
         // showAxes: true
 
         // settings not directly used by isoworld!
-        stepHRatio: 3 // stepH = blockSize / stepHRatio
+        stepHRatio: 4 // stepH = blockSize / stepHRatio
 
     }
 
@@ -911,11 +912,16 @@
             new IsoWorld.Point(               1, config.maxY-1, 20)
         ]
 
-        f.addPath([points[2], points[1], points[0]], 2, 'gravel');
+        // f.addPath([points[2], points[1], points[0]], 2, 'gravel');
 
-        f.leafTrap(new IsoWorld.Point(10,40,0));
+        // f.leafTrap(new IsoWorld.Point(10,40,0));
 
-        f.soilPit(new IsoWorld.Point(10,10,0));
+        // f.soilPit(new IsoWorld.Point(60,40,0));
+
+        // f.dendrometer(new IsoWorld.Point(10,10,0), 2);
+        // f.dendrometer(new IsoWorld.Point(5,95,0), 2);
+
+        // f.crane(new IsoWorld.Point(50, 50, 0), 45, 55);
 
         // set some ground stacks..
         f.ground(points[0], ['leaflitter', 0.5, 'sand', 8, 'soil']);
@@ -923,20 +929,72 @@
         f.ground(points[2], ['leaflitter', 0.5, 'sand', 8, 'leaflitter', 12, 'soil']);
         f.ground(points[3], ['leaflitter']);
 
+        var leftSide = [], x = [
+        // var leftSide = [
+            "971",   "970",   "1337",
+            "665",   "666",   "1320",
+            "1280",  "1277",
+            "491",
+            "1026",
+            "616",
+            "495",
+            "509",
+            "608",
+            "518",
+            "8000",
+            "506",
+            "495",   "597",  "505"
+        ];
 
-        var t, tree;
+        leftSide = [""];
+
+        var rightSide = [], y = [
+        // var rightSide = [
+            "972",   "661",   "662",
+            "663",
+            "657",
+            "644",   "642",
+            "481",   "1315",  "490",
+            "496",
+
+            "315",  "1040",  "344",
+            "767",
+            "756",
+            "762",
+            "378",
+            "737"
+        ]
+
+        var t, tree, species, special, leftIndex, rightIndex;
         var TW, tH;
         for (var t=0; t < trees.length; t++) {
             tree = trees[t];
+            species = tree.species;
+            special = false;
+            leftIndex = leftSide.indexOf(tree.tag);
+            if (leftIndex != -1) {
+                special = "left";
+                leftSide.splice(leftIndex, 1);
+            }
+            rightIndex = rightSide.indexOf(tree.tag);
+            if (rightIndex != -1) {
+                special = "right";
+                rightSide.splice(rightIndex, 1);
+            }
+
             tW = tree.dbh2013a/100;
             if (tW) {
                 tH = tree.height2010;
                 if (typeof tH != 'number' || tH == 0) {
                     tH = tW * 30;
                 }
-                f.tree(new IsoWorld.Point(tree.posX, tree.posY, 0), tW, tH);
+                f.tree(new IsoWorld.Point(tree.posX, tree.posY, 0), tW, tH, special);
             }
+
         }
+        console.log('left', leftSide);
+        console.log('right', rightSide);
+
         f.render();
         window.document.body.style.cursor = 'auto';
     }

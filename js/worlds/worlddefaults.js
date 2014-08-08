@@ -62,7 +62,7 @@ var defaultOptions = {
 
 var colorSchemes = {
     'bright': {
-        'blank': new Color(180,180,180),
+        'blank': new Color(180,180,180, 0.05),
         'soil': new Color(110, 50, 35),
         'sand': new Color(230, 200, 20),
         'leaflitter': new Color(90, 110, 50),
@@ -71,8 +71,10 @@ var colorSchemes = {
         'foliage': new Color(90, 200, 50, 0.66),
         'gravel': new Color(120, 135, 180),
         'leaftrap': new Color(50, 50, 50, 0.9),
-        'polywhite': new Color(210, 210, 210),
-        'steel': new Color(180, 190, 210),
+        'polywhite': new Color(190, 190, 190),
+        'concrete': new Color(130, 130, 130),
+        'steel': new Color(170, 180, 220),
+        'metal': new Color(60, 60, 80),
         'ui': new Color(255, 255, 0, 0.33),
         'highlight': new Color(255, 255, 100, 0.66)
     },

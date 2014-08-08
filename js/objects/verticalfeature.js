@@ -31,3 +31,4 @@ VerticalFeature.prototype.renderAt = function(iso, center, opts) {
 }
 // -----------------------------------------------------------------
 module.exports = VerticalFeature;
+
