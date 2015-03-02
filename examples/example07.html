@@ -69,8 +69,8 @@
 
         <h1>vertical scale (horiz&thinsp;:&thinsp;vert)</h1>
         <button class="narrow" type="button" onclick="set('scaleH', 2);">2:1</button>
-        <button class="narrow" type="button" onclick="set('scaleH', 2);">2:1</button>
         <button class="narrow" type="button" onclick="set('scaleH', 1);">1:1</button>
+        <button class="narrow" type="button" onclick="set('scaleH', 0.66);">2:3</button>
         <button class="narrow" type="button" onclick="set('scaleH', 0.5);">1:2</button>
         <button class="narrow" type="button" onclick="set('scaleH', 0.25);">1:4</button>
 
@@ -113,19 +113,20 @@
         minX:   -10,  maxX: 110,
         minY:   -10,  maxY: 110,
         minH: -10,  maxH:  20,
-        scaleH: 0.1,
+        scaleH: 0.66,
         stepH:  2,
         bedrockH: -1000,
 
         isoAngle: Math.PI/6,
-        blockSize: 120,
+        blockSize: 10,
 
         featurePosition: 'accurate',
 
-        isoGap: 0.02,
+        isoGap: 0.05,
 
-        treeType: 'stump',
-        // treeType: 'cylindrical'
+        // treeType: 'stump',
+        // treeType: 'cylindrical',
+        treeType: 'canopytop',
         // showAxes: true
 
         // settings not directly used by isoworld!
@@ -912,16 +913,16 @@
             new IsoWorld.Point(               1, config.maxY-1, 20)
         ]
 
-        // f.addPath([points[2], points[1], points[0]], 2, 'gravel');
+        f.addPath([points[2], points[1], points[0]], 2, 'gravel');
 
-        // f.leafTrap(new IsoWorld.Point(10,40,0));
+        f.leafTrap(new IsoWorld.Point(10,40,0));
 
-        // f.soilPit(new IsoWorld.Point(60,40,0));
+        f.soilPit(new IsoWorld.Point(60,40,0));
 
-        // f.dendrometer(new IsoWorld.Point(10,10,0), 2);
-        // f.dendrometer(new IsoWorld.Point(5,95,0), 2);
+        f.dendrometer(new IsoWorld.Point(10,10,0), 2);
+        f.dendrometer(new IsoWorld.Point(5,95,0), 2);
 
-        // f.crane(new IsoWorld.Point(50, 50, 0), 45, 55);
+        f.crane(new IsoWorld.Point(50, 50, 0), 45, 55);
 
         // set some ground stacks..
         f.ground(points[0], ['leaflitter', 0.5, 'sand', 8, 'soil']);
@@ -946,7 +947,7 @@
             "495",   "597",  "505"
         ];
 
-        leftSide = [""];
+        leftSide = ["972"];
 
         var rightSide = [], y = [
         // var rightSide = [
